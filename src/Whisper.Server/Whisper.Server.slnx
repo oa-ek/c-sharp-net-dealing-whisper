@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Whisper.API/Whisper.API.csproj" />
+  <Project Path="Whisper.Application/Whisper.Application.csproj" />
+  <Project Path="Whisper.Domain/Whisper.Domain.csproj" />
+  <Project Path="Whisper.Persistence/Whisper.Persistence.csproj" />
+</Solution>
