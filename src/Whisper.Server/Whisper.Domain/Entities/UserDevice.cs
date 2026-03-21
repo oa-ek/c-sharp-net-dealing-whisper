@@ -18,6 +18,9 @@ namespace Whisper.Domain.Entities
         public string PublicIdentityKey { get; set; }
         public string SignedPreKey { get; set; }
 
+        public string RefreshToken { get; set; } = string.Empty;
+        public DateTime TokenExpiresAt { get; set; }
+
         public string? DeviceName { get; set; }
         public string? DeviceType { get; set; }
 

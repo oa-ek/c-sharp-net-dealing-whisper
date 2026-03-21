@@ -20,17 +20,15 @@ namespace Whisper.Domain.Entities
 
         //secure
         public string PasswordHash { get; set; }
-        public string RefreshToken { get; set; } = string.Empty;
-        public DateTime TokenExpiresAt { get; set; }
-
 
         //protocol
         public string ETwoFactorSecret { get; set; }
 
 
         public string? PfpLink { get; set; }
-        public string? Description { get; set; }
+        public string? Bio { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime LastSeen { get; set; } = DateTime.UtcNow;
 
         public virtual ICollection<UserDevice> Devices { get; set; } = new List<UserDevice>();
         public virtual ICollection<ChatMember> ChatMembers { get; set; } = new List<ChatMember>();
