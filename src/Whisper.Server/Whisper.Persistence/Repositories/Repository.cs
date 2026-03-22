@@ -17,20 +17,20 @@ namespace Whisper.Persistence.Repositories
 
         public virtual IQueryable<T> GetAll() => _dbSet.AsNoTracking();
 
-        public virtual async Task<T?> GetByIdAsync(int id) => await _dbSet.FindAsync(id);
+        public virtual async Task<T?> GetByIdAsync(Guid id) => await _dbSet.FindAsync(id);
 
         public virtual async Task AddAsync(T entity) => await _dbSet.AddAsync(entity);
 
         public virtual async Task SaveAsync() => await _context.SaveChangesAsync();
 
-        public async Task Remove(int id)
+        public async Task Remove(Guid id)
         {
             var entity = await GetByIdAsync(id);
             if (entity != null)
                 _dbSet.Remove(entity);
         }
 
-        public async Task RemoveRange(IEnumerable<int> ids)
+        public async Task RemoveRange(IEnumerable<Guid> ids)
         {
             foreach (var id in ids)
                 await Remove(id);
