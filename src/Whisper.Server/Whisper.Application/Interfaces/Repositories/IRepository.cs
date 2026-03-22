@@ -3,10 +3,10 @@
     public interface IRepository<T> where T : class
     {
         IQueryable<T> GetAll();
-        Task<T?> GetByIdAsync(int id);
+        Task<T?> GetByIdAsync(Guid id);
         Task AddAsync(T entity);
         Task SaveAsync();
-        Task Remove(int id);
-        Task RemoveRange(IEnumerable<int> ids);
+        Task Remove(Guid id);
+        Task RemoveRange(IEnumerable<Guid> ids);
     }
 }
