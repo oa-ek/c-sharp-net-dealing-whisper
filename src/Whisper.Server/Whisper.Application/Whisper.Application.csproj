@@ -13,8 +13,8 @@
   <ItemGroup>
     <Folder Include="DTOs\" />
     <Folder Include="Helpers\" />
-    <Folder Include="Interfaces\" />
     <Folder Include="Mappings\" />
+    <Folder Include="Common\" />
     <Folder Include="Validators\" />
     <Folder Include="Services\" />
   </ItemGroup>
