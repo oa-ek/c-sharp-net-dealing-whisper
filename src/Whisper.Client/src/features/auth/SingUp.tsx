@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthInput } from '../../components/ui/AuthInput';
 import { authApi } from '../../api/authApi';
-import type { RegisterData } from '../../types/auth'; 
-import { useNavigate } from 'react-router-dom';
+import { db } from '../../api/db';
+import type { RegisterData } from '../../types/auth';
 
 export const SignUp = () => {
   const [form, setForm] = useState({ username: '', email: '', password: '' });
@@ -13,28 +14,37 @@ export const SignUp = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Імітація ключів для X3DH протоколу
-    const keys = {
-      identity: "pub_id_" + btoa(Math.random().toString()).substring(0, 12),
-      signed: "pub_signed_" + btoa(Math.random().toString()).substring(0, 12),
-      preKeys: ["pre_1", "pre_2", "pre_3"]
+    const keyBundle = {
+      identity: { privateKey: "priv_id_" + Math.random(), publicKey: "pub_id_" + Math.random() },
+      signedPreKey: { privateKey: "priv_sign_" + Math.random(), publicKey: "pub_sign_" + Math.random() },
+      oneTimePreKeys: [
+        { privateKey: "priv_otk_1", publicKey: "pub_otk_1" },
+        { privateKey: "priv_otk_2", publicKey: "pub_otk_2" }
+      ]
     };
 
     try {
       const payload: RegisterData = {
         ...form,
-        deviceName: "Web Client (Chrome)",
+        deviceName: "Web Client",
         deviceType: "Desktop",
-        publicIdentityKey: keys.identity,
-        signedPreKey: keys.signed,
-        oneTimePreKeys: keys.preKeys
+        publicIdentityKey: keyBundle.identity.publicKey,
+        signedPreKey: keyBundle.signedPreKey.publicKey,
+        oneTimePreKeys: keyBundle.oneTimePreKeys.map(k => k.publicKey)
       };
 
       const result = await authApi.register(payload);
       
-      localStorage.setItem('whisper_device_id', result.deviceId);
+      await db.auth.put({
+        deviceId: result.deviceId,
+        token: result.accessToken,
+        identity: keyBundle.identity,
+        signedPreKey: keyBundle.signedPreKey,
+        oneTimePreKeys: keyBundle.oneTimePreKeys,
+        chats: []
+      });
       
-      console.log('Registration success, device registered');
+      console.log('Identity initialized and saved to IndexedDB');
       navigate('/auth/login');
     } catch (err) {
       console.error(err);
@@ -45,30 +55,11 @@ export const SignUp = () => {
 
   return (
     <form onSubmit={handleSignUp} className="flex flex-col gap-4 w-full">
-      <AuthInput 
-        label="Username" 
-        placeholder="@chicago"
-        required
-        onChange={e => setForm({...form, username: e.target.value})} 
-      />
-      <AuthInput 
-        label="Email" 
-        type="email" 
-        required
-        onChange={e => setForm({...form, email: e.target.value})} 
-      />
-      <AuthInput 
-        label="Password" 
-        type="password" 
-        required
-        onChange={e => setForm({...form, password: e.target.value})} 
-      />
-      
-      <button 
-        disabled={loading}
-        className="w-full py-3 mt-2 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
-      >
-        {loading ? "GENERATING KEYS..." : "INITIALIZE PROTOCOL"}
+      <AuthInput label="Username" placeholder="username" required onChange={e => setForm({...form, username: e.target.value})} />
+      <AuthInput label="Email" type="email" required onChange={e => setForm({...form, email: e.target.value})} />
+      <AuthInput label="Password" type="password" required onChange={e => setForm({...form, password: e.target.value})} />
+      <button disabled={loading} className="w-full py-3 mt-2 bg-blue-600 text-white font-black rounded-xl active:scale-95 disabled:opacity-50">
+        {loading ? "GENERATING..." : "INITIALIZE PROTOCOL"}
       </button>
     </form>
   );

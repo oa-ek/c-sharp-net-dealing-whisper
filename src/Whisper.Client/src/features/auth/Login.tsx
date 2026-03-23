@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthInput } from '../../components/ui/AuthInput';
 import { authApi } from '../../api/authApi';
-import { useNavigate } from 'react-router-dom'; 
+import { db } from '../../api/db';
 import type { LoginData } from '../../types/auth';
 
 export const Login = () => {
@@ -14,55 +15,37 @@ export const Login = () => {
     e.preventDefault();
     setError(null);
 
-    const storedDeviceId = localStorage.getItem('whisper_device_id');
+    const authData = await db.auth.toCollection().first();
     
-    if (!storedDeviceId) {
+    if (!authData?.deviceId) {
       setError("Device not recognized. Please register first.");
       return;
     }
 
     try {
-      const loginPayload: LoginData = {
+      const result = await authApi.login({
         email,
         password,
-        deviceId: storedDeviceId
-      };
-
-      const result = await authApi.login(loginPayload);
+        deviceId: authData.deviceId
+      });
       
-      localStorage.setItem('whisper_access_token', result.accessToken);
-      localStorage.setItem('whisper_refresh_token', result.refreshToken);
+      await db.auth.update(authData.deviceId, { 
+        token: result.accessToken 
+      });
       
-      console.log('Login successful');
+      console.log('Token updated for account:', email);
       navigate('/chats');
     } catch (err: any) {
-      setError(err.message || "Error logging in");
+      setError(err.message || "Error occurred while logging in");
     }
   };
 
   return (
     <form onSubmit={handleLogin} className="flex flex-col gap-4 w-full">
       {error && <p className="text-red-500 text-xs font-bold text-center bg-red-500/10 py-2 rounded">{error}</p>}
-      
-      <AuthInput 
-        label="Email" 
-        type="email" 
-        required
-        value={email} 
-        onChange={e => setEmail(e.target.value)} 
-      />
-      <AuthInput 
-        label="Password" 
-        type="password" 
-        required
-        value={password} 
-        onChange={e => setPassword(e.target.value)} 
-      />
-      
-      <button 
-        type="submit" 
-        className="w-full py-3 mt-2 bg-white text-black font-black rounded-xl hover:bg-zinc-200 transition-transform active:scale-95"
-      >
+      <AuthInput label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+      <AuthInput label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+      <button className="w-full py-3 mt-2 bg-white text-black font-black rounded-xl hover:bg-zinc-200 active:scale-95">
         DECRYPT SESSION
       </button>
     </form>
