@@ -17,6 +17,7 @@ namespace Whisper.Domain.Entities
         public string ChatId { get; set; }
 
         public string Ciphertext { get; set; }
+        public string WrappedKey { get; set; }
         public string ParentMessageId { get; set; } 
         public DeliveryStatus DeliveryStatus { get; set; } = DeliveryStatus.Sent;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
