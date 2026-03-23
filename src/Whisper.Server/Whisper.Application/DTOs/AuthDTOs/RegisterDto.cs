@@ -23,6 +23,8 @@ namespace Whisper.Application.DTOs.AuthDTOs
         public string PublicIdentityKey { get; set; } = string.Empty;
         [Required]
         public string SignedPreKey { get; set; } = string.Empty;
+        [Required]
+        public string SignedPreKeySignature { get; set; } = string.Empty;
 
         public List<string> OneTimePreKeys { get; set; } = new List<string>();
     }

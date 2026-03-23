@@ -49,6 +49,7 @@ namespace Whisper.Application.Services
                 DeviceType = dto.DeviceType ?? "Web",
                 PublicIdentityKey = dto.PublicIdentityKey,
                 SignedPreKey = dto.SignedPreKey,
+                SignedPreKeySignature = dto.SignedPreKeySignature,
                 RefreshToken = _tokenService.GenerateRefreshToken(),
                 TokenExpiresAt = DateTime.UtcNow.AddDays(7)
             };
