@@ -19,5 +19,6 @@ export interface RegisterData {
   deviceType?: string;
   publicIdentityKey: string;
   signedPreKey: string;
+  signedPreKeySignature: string;
   oneTimePreKeys: string[];
 }
