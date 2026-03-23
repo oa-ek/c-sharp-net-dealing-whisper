@@ -61,6 +61,17 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // Твій Vite порт
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); // Потрібно для передачі cookies/auth headers
+    });
+});
+
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -79,6 +90,7 @@ if (app.Environment.IsDevelopment())
                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
     });
 }
+app.UseCors("AllowReactApp");
 
 app.UseHttpsRedirection();
 
