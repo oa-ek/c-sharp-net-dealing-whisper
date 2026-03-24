@@ -6,7 +6,7 @@ namespace Whisper.Persistence.Repositories
 {
     public class ReactionRepository : MongoRepository<Reaction>, IReactionRepository
     {
-        public ReactionRepository(IMongoDatabase database, string collectionName) : base(database, collectionName) { }
+        public ReactionRepository(IMongoDatabase database) : base(database, "reactions-collection") { }
 
     }
 }

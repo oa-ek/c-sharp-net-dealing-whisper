@@ -6,7 +6,7 @@ namespace Whisper.Persistence.Repositories
 {
     public class AttachmentRepository : MongoRepository<Attachment>, IAttachmentRepository
     {
-        public AttachmentRepository(IMongoDatabase database, string collectionName) : base(database, collectionName) { }
+        public AttachmentRepository(IMongoDatabase database) : base(database, "attachments-collection") { }
 
     }
 }

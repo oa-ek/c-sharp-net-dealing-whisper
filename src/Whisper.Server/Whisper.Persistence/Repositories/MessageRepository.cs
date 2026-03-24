@@ -7,7 +7,7 @@ namespace Whisper.Persistence.Repositories
 {
     public class MessageRepository : MongoRepository<Message>, IMessageRepository
     {
-        public MessageRepository(IMongoDatabase database, string collectionName) : base(database, collectionName) { }
+        public MessageRepository(IMongoDatabase database) : base(database, "messages-collection") { }
 
         public async Task<Message> EditAsync(Message message)
         {

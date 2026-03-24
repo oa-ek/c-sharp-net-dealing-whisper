@@ -36,11 +36,11 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserDeviceRepository, UserDeviceRepository>();
 builder.Services.AddScoped<IUserPrivacySettingRepository, UserPrivacySettingRepository>();
-//builder.Services.AddScoped<IOneTimePreKeyRepository, OneTimePreKeyRepository>();
-//builder.Services.AddScoped<IChatRepository, ChatRepository>();
-//builder.Services.AddScoped<IMessageRepository, MessageRepository>();
-//builder.Services.AddScoped<IReactionRepository, ReactionRepository>();
-//builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
+builder.Services.AddScoped<IOneTimePreKeyRepository, OneTimePreKeyRepository>();
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IReactionRepository, ReactionRepository>();
+builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 
 //// Add services to the container.
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
@@ -49,11 +49,11 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserDeviceService, UserDeviceService>();
 builder.Services.AddScoped<IUserPrivacySettingService, UserPrivacySettingService>();
-//builder.Services.AddScoped<IOneTimePreKeyService, OneTimePreKeyService>();
-//builder.Services.AddScoped<IChatService, ChatService>();
-//builder.Services.AddScoped<IMessageService, MessageService>();
-//builder.Services.AddScoped<IReactionService, ReactionService>();
-//builder.Services.AddScoped<IAttachmentService, AttachmentService>();
+builder.Services.AddScoped<IOneTimePreKeyService, OneTimePreKeyService>();
+builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<IReactionService, ReactionService>();
+builder.Services.AddScoped<IAttachmentService, AttachmentService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT Key is missing!");
