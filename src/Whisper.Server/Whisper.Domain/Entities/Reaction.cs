@@ -9,8 +9,8 @@ namespace Whisper.Domain.Entities
     public class Reaction
     {
         [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string ReactionId { get; set; }
+        [BsonRepresentation(BsonType.String)]
+        public Guid ReactionId { get; set; } = Guid.NewGuid();
         
         public string UserId { get; set; }
         public string Emoji { get; set; }

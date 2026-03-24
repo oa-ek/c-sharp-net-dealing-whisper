@@ -6,6 +6,7 @@ using Microsoft.OpenApi;
 using MongoDB.Driver;
 using Scalar.AspNetCore;
 using System.Text;
+using Whisper.API.Controllers;
 using Whisper.Application.Interfaces.Repositories;
 using Whisper.Application.Interfaces.Services;
 using Whisper.Application.Services;
@@ -29,7 +30,6 @@ builder.Services.AddScoped(sp =>
     var client = sp.GetRequiredService<IMongoClient>();
     return client.GetDatabase("whisper_messages_db");
 });
-
 
 // Add repositories
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -128,6 +128,8 @@ builder.Services.AddOpenApi(options =>
         return Task.CompletedTask;
     });
 });
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -142,6 +144,8 @@ if (app.Environment.IsDevelopment())
     });
 }
 app.UseCors("AllowReactApp");
+
+app.MapHub<WSChatController>("ws/v1/chat");
 
 app.UseHttpsRedirection();
 

@@ -4,9 +4,9 @@
     {
         Task<IQueryable<T>> GetAll();
         Task<T?> GetByIdAsync(Guid id);
-        Task AddAsync(T entity);
+        Task<T?> AddAsync(T entity);
         Task SaveAsync();
-        Task Remove(Guid id);
-        Task RemoveRange(IEnumerable<Guid> ids);
+        Task<T?> Remove(Guid id);
+        Task<IEnumerable<T>> RemoveRange(IEnumerable<Guid> ids);
     }
 }

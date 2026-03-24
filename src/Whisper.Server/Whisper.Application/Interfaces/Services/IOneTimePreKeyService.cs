@@ -1,6 +1,6 @@
 ﻿namespace Whisper.Application.Interfaces.Services
 {
-    public class IOneTimePreKeyService
+    public interface IOneTimePreKeyService
     {
 
     }
