@@ -18,18 +18,28 @@ namespace Whisper.Persistence.Repositories
             return await _collection.Find(Builders<T>.Filter.Eq("Id", id)).FirstOrDefaultAsync() ;
         }
 
-        public virtual async Task AddAsync(T entity) => await _collection.InsertOneAsync(entity);
+        public virtual async Task<T?> AddAsync(T entity)
+        {
+            await _collection.InsertOneAsync(entity);
+            return entity;
+        }
 
         public virtual async Task SaveAsync()
         {
             throw new NotImplementedException();
         }
 
-        public virtual async Task Remove(Guid id) => await _collection.DeleteOneAsync(Builders<T>.Filter.Eq("Id", id));
-        public virtual async Task RemoveRange(IEnumerable<Guid> ids)
+        public virtual async Task<T?> Remove(Guid id) => await _collection.FindOneAndDeleteAsync(Builders<T>.Filter.Eq("Id", id));
+        public virtual async Task<IEnumerable<T>> RemoveRange(IEnumerable<Guid> ids)
         {
+            List<T> result = new();
             foreach (var id in ids)
-                await Remove(id);
+            {
+                var item = await Remove(id);
+                if (item != null)
+                    result.Add(item);
+            }
+            return result;
         }
     }
 }

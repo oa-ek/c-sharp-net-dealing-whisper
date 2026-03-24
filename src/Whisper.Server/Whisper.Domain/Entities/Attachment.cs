@@ -9,8 +9,8 @@ namespace Whisper.Domain.Entities
     public class Attachment
     {
         [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string AttachmentId { get; set; }
+        [BsonRepresentation(BsonType.String)]
+        public Guid AttachmentId { get; set; } = Guid.NewGuid();
         public string Name { get; set; }
         public string Url { get; set; }
         public string ContentType { get; set; }

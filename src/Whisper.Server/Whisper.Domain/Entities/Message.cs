@@ -10,13 +10,14 @@ namespace Whisper.Domain.Entities
     public class Message
     {
         [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
+        [BsonRepresentation(BsonType.String)]
+        public Guid Id { get; set; } = Guid.NewGuid();
 
         public string SenderId { get; set; }
         public string ChatId { get; set; }
 
         public string Ciphertext { get; set; }
+        public string WrappedKey { get; set; }
         public string ParentMessageId { get; set; } 
         public DeliveryStatus DeliveryStatus { get; set; } = DeliveryStatus.Sent;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
