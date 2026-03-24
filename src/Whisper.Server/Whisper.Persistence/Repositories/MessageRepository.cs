@@ -1,6 +1,7 @@
 ﻿using MongoDB.Driver;
 using Whisper.Application.Interfaces.Repositories;
 using Whisper.Domain.Entities;
+using Whisper.Domain.Enums;
 
 namespace Whisper.Persistence.Repositories
 {
@@ -8,5 +9,20 @@ namespace Whisper.Persistence.Repositories
     {
         public MessageRepository(IMongoDatabase database, string collectionName) : base(database, collectionName) { }
 
+        public async Task<Message> EditAsync(Message message)
+        {
+            var update = Builders<Message>.Update
+                .Set(m => m.Ciphertext, message.Ciphertext)
+                .Set(m => m.WrappedKey, message.WrappedKey)
+                .Set(m => m.Attachments, message.Attachments);
+            return await _collection.FindOneAndUpdateAsync(Builders<Message>.Filter.Eq("Id", message.Id), update);
+        }
+
+        public async Task<Message> EditDeliveryStatusAsync(Guid messageId, DeliveryStatus deliveryStatus)
+        {
+            var update = Builders<Message>.Update
+                .Set(m => m.DeliveryStatus, deliveryStatus);
+            return await _collection.FindOneAndUpdateAsync(Builders<Message>.Filter.Eq("Id", messageId), update);
+        }
     }
 }

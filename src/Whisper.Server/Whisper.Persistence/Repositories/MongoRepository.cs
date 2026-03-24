@@ -15,7 +15,7 @@ namespace Whisper.Persistence.Repositories
 
         public virtual async Task<T> GetByIdAsync(Guid id)
         {
-            return await _collection.Find(Builders<T>.Filter.Eq("Id", id)).FirstOrDefaultAsync() ;
+            return await _collection.Find(Builders<T>.Filter.Eq("Id", id)).FirstOrDefaultAsync();
         }
 
         public virtual async Task<T?> AddAsync(T entity)
@@ -24,10 +24,7 @@ namespace Whisper.Persistence.Repositories
             return entity;
         }
 
-        public virtual async Task SaveAsync()
-        {
-            throw new NotImplementedException();
-        }
+        public virtual async Task SaveAsync() { }
 
         public virtual async Task<T?> Remove(Guid id) => await _collection.FindOneAndDeleteAsync(Builders<T>.Filter.Eq("Id", id));
         public virtual async Task<IEnumerable<T>> RemoveRange(IEnumerable<Guid> ids)
