@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using MongoDB.Driver;
 using Scalar.AspNetCore;
 using System.Text;
@@ -30,26 +32,28 @@ builder.Services.AddScoped(sp =>
 });
 
 // Add repositories
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserDeviceRepository, UserDeviceRepository>();
 builder.Services.AddScoped<IUserPrivacySettingRepository, UserPrivacySettingRepository>();
-builder.Services.AddScoped<IOneTimePreKeyRepository, OneTimePreKeyRepository>();
-builder.Services.AddScoped<IChatRepository, ChatRepository>();
-builder.Services.AddScoped<IMessageRepository, MessageRepository>();
-builder.Services.AddScoped<IReactionRepository, ReactionRepository>();
-builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
+//builder.Services.AddScoped<IOneTimePreKeyRepository, OneTimePreKeyRepository>();
+//builder.Services.AddScoped<IChatRepository, ChatRepository>();
+//builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+//builder.Services.AddScoped<IReactionRepository, ReactionRepository>();
+//builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 
-// Add services to the container.
+//// Add services to the container.
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserDeviceService, UserDeviceService>();
 builder.Services.AddScoped<IUserPrivacySettingService, UserPrivacySettingService>();
-builder.Services.AddScoped<IOneTimePreKeyService, OneTimePreKeyService>();
-builder.Services.AddScoped<IChatService, ChatService>();
-builder.Services.AddScoped<IMessageService, MessageService>();
-builder.Services.AddScoped<IReactionService, ReactionService>();
-builder.Services.AddScoped<IAttachmentService, AttachmentService>();
+//builder.Services.AddScoped<IOneTimePreKeyService, OneTimePreKeyService>();
+//builder.Services.AddScoped<IChatService, ChatService>();
+//builder.Services.AddScoped<IMessageService, MessageService>();
+//builder.Services.AddScoped<IReactionService, ReactionService>();
+//builder.Services.AddScoped<IAttachmentService, AttachmentService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT Key is missing!");
@@ -77,22 +81,57 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // Твій Vite порт
+        policy.WithOrigins("http://localhost:5173") 
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials(); // Потрібно для передачі cookies/auth headers
+              .AllowCredentials(); 
     });
 });
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        const string schemeName = "Bearer";
 
+        document.Components ??= new OpenApiComponents();
+
+        if (document.Components.SecuritySchemes == null)
+        {
+            document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>();
+        }
+
+        IOpenApiSecurityScheme securityScheme = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Введіть JWT токен"
+        };
+
+        if (!document.Components.SecuritySchemes.ContainsKey(schemeName))
+        {
+            document.Components.SecuritySchemes.Add(schemeName, securityScheme);
+        }
+
+        var schemeReference = new OpenApiSecuritySchemeReference(schemeName);
+
+        var requirement = new OpenApiSecurityRequirement();
+        requirement.Add(schemeReference, new List<string>());
+
+        document.Security ??= new List<OpenApiSecurityRequirement>();
+        document.Security.Add(requirement);
+
+        return Task.CompletedTask;
+    });
+});
 builder.Services.AddSignalR();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -100,7 +139,7 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference(options =>
     {
         options.WithTitle("Whisper API")
-               .WithTheme(ScalarTheme.Moon) 
+               .WithTheme(ScalarTheme.Moon)
                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
     });
 }
@@ -110,8 +149,11 @@ app.MapHub<WSChatController>("ws/v1/chat");
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
+
