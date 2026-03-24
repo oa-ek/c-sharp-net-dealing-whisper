@@ -17,6 +17,7 @@ namespace Whisper.Domain.Entities
         public virtual User User { get; set; }
         public string PublicIdentityKey { get; set; }
         public string SignedPreKey { get; set; }
+        public string SignedPreKeySignature { get; set; }
 
         public string RefreshToken { get; set; } = string.Empty;
         public DateTime TokenExpiresAt { get; set; }
