@@ -25,7 +25,9 @@ namespace Whisper.Application.Services
             if (message == null)
                 throw new Exception("Message does not exist. Find another message id to set reactions to.");
 
-            var chatParticipants = await _chatRepository.GetParticipants(message.ChatId);
+            var chatParticipants = (await _chatRepository.GetParticipants(message.ChatId))
+                .Select(p => p.Id)
+                .ToList();
             if (chatParticipants == null)
                 throw new Exception("User cannot even see the message. Why set reactions to it?");
 
@@ -39,7 +41,9 @@ namespace Whisper.Application.Services
             if (message == null)
                 throw new Exception("Message does not exist. Find another message id to remove reactions from.");
 
-            var chatParticipants = await _chatRepository.GetParticipants(message.ChatId);
+            var chatParticipants = (await _chatRepository.GetParticipants(message.ChatId))
+                .Select(p => p.Id)
+                .ToList();
             if (chatParticipants == null)
                 throw new Exception("User cannot even see the message. Why remove reactions from it?");
 
