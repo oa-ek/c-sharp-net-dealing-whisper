@@ -5,43 +5,60 @@ class ChatSocketService {
     private connection: signalR.HubConnection | null = null;
 
     public async startConnection(token: string): Promise<void> {
-        if (this.connection) return; 
+        if (this.connection?.state === signalR.HubConnectionState.Connected) return;
 
         this.connection = new signalR.HubConnectionBuilder()
             .withUrl("https://localhost:7055/ws/v1/chat", {
                 accessTokenFactory: () => token,
-                skipNegotiation: true,
-                transport: signalR.HttpTransportType.WebSockets
             })
-            .withAutomaticReconnect()
+            .withAutomaticReconnect() 
             .build();
 
         try {
             await this.connection.start();
-            console.log("Whisper WebSockets: Connected");
+            console.log("✅ Whisper WebSockets: Connected");
         } catch (err) {
-            console.error("Whisper WebSockets Error: ", err);
+            console.error("❌ Whisper WebSockets Connection Error: ", err);
+            throw err;
         }
     }
 
+    private isConnected(): boolean {
+        return this.connection?.state === signalR.HubConnectionState.Connected;
+    }
+
     public async joinChat(chatId: string) {
-        await this.connection?.invoke("JoinChat", chatId);
+        if (this.isConnected()) {
+            await this.connection?.invoke("JoinChat", chatId);
+        } else {
+            console.warn("⚠️ JoinChat failed: Socket not connected");
+        }
     }
 
     public async sendMessage(message: MessageCreateDto) {
-        await this.connection?.invoke("MessageSend", message);
+        if (this.isConnected()) {
+            await this.connection?.invoke("MessageSend", message);
+        } else {
+            console.error("🚫 Cannot send message: WebSocket is not connected");
+        }
     }
 
     public async addReaction(reaction: ReactionCreateDto) {
-        await this.connection?.invoke("ReactionAdd", reaction);
+        if (this.isConnected()) {
+            await this.connection?.invoke("ReactionAdd", reaction);
+        }
     }
 
     public async startTyping(chatId: string) {
-        await this.connection?.invoke("TypingStart", chatId);
+        if (this.isConnected()) {
+            await this.connection?.invoke("TypingStart", chatId);
+        }
     }
 
     public async stopTyping(chatId: string) {
-        await this.connection?.invoke("TypingStop", chatId);
+        if (this.isConnected()) {
+            await this.connection?.invoke("TypingStop", chatId);
+        }
     }
 
 
@@ -58,9 +75,19 @@ class ChatSocketService {
     }
 
     public offAll() {
-        this.connection?.off("message-new");
-        this.connection?.off("typing-start");
-        this.connection?.off("typing-stop");
+        if (this.connection) {
+            this.connection.off("message-new");
+            this.connection.off("typing-start");
+            this.connection.off("typing-stop");
+        }
+    }
+
+    public async stopConnection() {
+        if (this.connection) {
+            await this.connection.stop();
+            this.connection = null;
+            console.log("🔌 Whisper WebSockets: Disconnected");
+        }
     }
 }
 
