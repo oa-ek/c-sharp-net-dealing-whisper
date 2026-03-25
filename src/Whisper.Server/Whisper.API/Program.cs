@@ -145,8 +145,6 @@ if (app.Environment.IsDevelopment())
 }
 app.UseCors("AllowReactApp");
 
-app.MapHub<WSChatController>("ws/v1/chat");
-
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
@@ -154,6 +152,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<WSChatController>("ws/v1/chat");
 
 app.Run();
 
