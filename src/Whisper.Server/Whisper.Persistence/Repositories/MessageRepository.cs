@@ -24,5 +24,13 @@ namespace Whisper.Persistence.Repositories
                 .Set(m => m.DeliveryStatus, deliveryStatus);
             return await _collection.FindOneAndUpdateAsync(Builders<Message>.Filter.Eq("Id", messageId), update);
         }
+
+        public async Task<IEnumerable<Message>> GetLimitedAsync(string chatId, int limit, int offset)
+        {
+            return await _collection.Find(m => m.ChatId.ToString() == chatId)
+                .Skip(offset)
+                .Limit(limit)
+                .ToListAsync();
+        }
     }
 }

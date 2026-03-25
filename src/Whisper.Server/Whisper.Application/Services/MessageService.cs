@@ -20,7 +20,9 @@ namespace Whisper.Application.Services
 
         public async Task<MessageDto> AddAsync(string userId, MessageCreateDto message)
         {
-            var chatParticipants = (await _chatRepository.GetParticipants(Guid.Parse(message.ChatId))).ToList();
+            var chatParticipants = (await _chatRepository.GetParticipants(Guid.Parse(message.ChatId)))
+                .Select(p => p.Id)
+                .ToList();
             if (chatParticipants == null)
                 throw new Exception("Chat was not found");
 
@@ -42,7 +44,9 @@ namespace Whisper.Application.Services
             if (chat == null)
                 throw new Exception("The message is broken and doesn't belong to any chat. Crazy.");
 
-            var chatParticipants = (await _chatRepository.GetParticipants(chat.Id)).ToList();
+            var chatParticipants = (await _chatRepository.GetParticipants(chat.Id))
+                .Select(p => p.Id)
+                .ToList();
             if (chatParticipants == null)
                 throw new Exception("Chat was not found");
 
@@ -60,7 +64,9 @@ namespace Whisper.Application.Services
             if (chat == null)
                 throw new Exception("The message is broken and doesn't belong to any chat. Crazy.");
 
-            var chatParticipants = (await _chatRepository.GetParticipants(chat.Id)).ToList();
+            var chatParticipants = (await _chatRepository.GetParticipants(chat.Id))
+                .Select(p => p.Id)
+                .ToList();
             if (chatParticipants == null)
                 throw new Exception("Chat was not found");
 
