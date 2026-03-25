@@ -74,6 +74,21 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
         ClockSkew = TimeSpan.Zero
+    }; 
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+
+            // Якщо запит іде до нашого хабу — дістаємо токен з URL
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/ws/v1/chat"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -128,7 +143,10 @@ builder.Services.AddOpenApi(options =>
         return Task.CompletedTask;
     });
 });
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true; // Тепер фронтенд покаже точний текст помилки
+});
 
 var app = builder.Build();
 
@@ -145,8 +163,6 @@ if (app.Environment.IsDevelopment())
 }
 app.UseCors("AllowReactApp");
 
-app.MapHub<WSChatController>("ws/v1/chat");
-
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
@@ -154,6 +170,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<WSChatController>("ws/v1/chat");
 
 app.Run();
 

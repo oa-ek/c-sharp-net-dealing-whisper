@@ -18,7 +18,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: '/chats', // Додаємо цей шлях
+    path: '/chats', 
     element: <ChatsPage />, 
   },
 ]);

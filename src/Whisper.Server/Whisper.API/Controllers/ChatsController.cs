@@ -8,7 +8,7 @@ using Whisper.Application.Interfaces.Services;
 namespace Whisper.API.Controllers
 {
     [Authorize]
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     [ApiController]
     public class ChatsController : ControllerBase
     {
@@ -66,5 +66,9 @@ namespace Whisper.API.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             return Ok(await _chatService.CreateChatAsync(userId, receiverId, chat));
         }
+
+        [AllowAnonymous]
+        [HttpGet("test")]
+        public IActionResult Test() => Ok("Chats is working!");
     }
 }
