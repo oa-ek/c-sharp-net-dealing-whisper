@@ -74,7 +74,7 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
         ClockSkew = TimeSpan.Zero
-    }; 
+    };
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
@@ -82,8 +82,8 @@ builder.Services.AddAuthentication(options =>
             var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
 
-            // Якщо запит іде до нашого хабу — дістаємо токен з URL
-            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/ws/v1/chat"))
+            if (!string.IsNullOrEmpty(accessToken) &&
+                path.Value!.Contains("/ws/v1/chat", StringComparison.OrdinalIgnoreCase))
             {
                 context.Token = accessToken;
             }
@@ -96,7 +96,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") 
+        policy.WithOrigins(
+                "http://localhost:5173", 
+                "https://localhost:5173",
+                "http://26.205.72.169:5173", 
+                "https://26.205.72.169:5173"
+              )
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials(); 
@@ -145,7 +150,7 @@ builder.Services.AddOpenApi(options =>
 });
 builder.Services.AddSignalR(options =>
 {
-    options.EnableDetailedErrors = true; // Тепер фронтенд покаже точний текст помилки
+    options.EnableDetailedErrors = true;
 });
 
 var app = builder.Build();
@@ -163,7 +168,7 @@ if (app.Environment.IsDevelopment())
 }
 app.UseCors("AllowReactApp");
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseAuthentication();
 

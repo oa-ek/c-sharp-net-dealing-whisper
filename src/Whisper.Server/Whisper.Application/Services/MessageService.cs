@@ -12,9 +12,10 @@ namespace Whisper.Application.Services
         private readonly IMapper _mapper;
         private readonly IMessageRepository _messageRepository;
         private readonly IChatRepository _chatRepository;
-        public MessageService(IMessageRepository messageRepository, IMapper mapper)
+        public MessageService(IMessageRepository messageRepository, IChatRepository chatRepository, IMapper mapper)
         {
             _messageRepository = messageRepository;
+            _chatRepository = chatRepository;
             _mapper = mapper;
         }
 

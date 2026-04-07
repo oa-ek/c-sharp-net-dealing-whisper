@@ -8,7 +8,7 @@ class ChatSocketService {
         if (this.connection?.state === signalR.HubConnectionState.Connected) return;
 
         this.connection = new signalR.HubConnectionBuilder()
-            .withUrl("https://localhost:7055/ws/v1/chat", {
+            .withUrl("http://26.205.72.169:5055/ws/v1/chat", {
                 accessTokenFactory: () => token,
             })
             .withAutomaticReconnect() 

@@ -3,7 +3,8 @@ import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { getAuthTokenFromDB } from "./db";
 
 const agent = axios.create({
-    baseURL: "https://localhost:7055",
+    baseURL: "http://26.205.72.169:5055",
+
 });
 
 agent.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
