@@ -1,16 +1,34 @@
+import path from "path"
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
+import tailwindcss from "@tailwindcss/vite"
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    babel({ presets: [reactCompilerPreset()] }),
+    tailwindcss()
+  ],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
   server: {
+    host: true,
+    port: 5173,
     proxy: {
       '/api': {
-        target: 'https://localhost:7249',
+        target: 'http://26.205.72.169:5055',
         changeOrigin: true,
         secure: false,
       },
+      '/ws': {
+        target: 'http://26.205.72.169:5055',
+        ws: true, // Підтримка WebSockets для SignalR
+        secure: false,
+      },
     },
-  },
+  }
 })

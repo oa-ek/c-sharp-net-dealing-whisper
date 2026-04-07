@@ -1,8 +1,9 @@
 import { useState } from 'react'
 
 function App() {
+
   return (
-      <div>Hello</div>
+    <p>Hello, Vite + React!</p>
   )
 }
 
