@@ -11,7 +11,9 @@ const ChatsPage = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | undefined>(undefined);
   const [showInfo, setShowInfo] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  // 1. Завантаження списку чатів
   const loadChats = async () => {
     try {
       const data = await agent.Chats.list();
@@ -25,27 +27,42 @@ const ChatsPage = () => {
     loadChats();
   }, []);
 
-useEffect(() => {
-  const connect = async () => {
-    const token = await getAuthTokenFromDB();
-    
-    console.log("🛠️ Спроба підключення. Токен:", token ? "Знайдено (починається на " + token.substring(0, 10) + "...)" : "ВІДСУТНІЙ");
+  // 2. Ініціалізація сокетів та отримання свого ID з токена
+  useEffect(() => {
+    const connect = async () => {
+      const token = await getAuthTokenFromDB();
+      
+      if (token) {
+        // Витягуємо ID користувача з JWT токена
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          setCurrentUserId(payload.nameid); // Твій ID на бекенді зазвичай NameIdentifier
+        } catch (e) {
+          console.error("Помилка парсингу токена", e);
+        }
 
-    if (token) {
-      try {
-        await chatSocketService.startConnection(token);
-      } catch (err) {
-        console.error("❌ SignalR Connection Error:", err);
+        try {
+          await chatSocketService.startConnection(token);
+
+          // СЛУХАЄМО НОВІ ПОВІДОМЛЕННЯ В РЕАЛЬНОМУ ЧАСІ
+          chatSocketService.onMessageNew((newMsg) => {
+            setMessages((prev) => {
+              // Перевірка на дублікати та чи повідомлення з цього чату
+              if (prev.some(m => m.id === newMsg.id)) return prev;
+              return [...prev, newMsg];
+            });
+          });
+        } catch (err) {
+          console.error("❌ SignalR Connection Error:", err);
+        }
       }
-    } else {
-      console.error("❌ Неможливо підключити сокети: немає токена. Перенаправлення на логін?");
-    }
-  };
-  connect();
+    };
+    connect();
 
-  return () => chatSocketService.offAll();
-}, []);
+    return () => chatSocketService.offAll();
+  }, []);
 
+  // 3. Синхронізація при зміні чату
   useEffect(() => {
     if (selectedChatId) {
       setMessages([]); 
@@ -55,6 +72,7 @@ useEffect(() => {
           const history = await agent.Chats.messages(selectedChatId);
           setMessages(history);
 
+          // Заходимо в "кімнату" чату на сервері
           await chatSocketService.joinChat(selectedChatId);
         } catch (err) {
           console.error("Помилка синхронізації чату:", err);
@@ -64,6 +82,7 @@ useEffect(() => {
     }
   }, [selectedChatId]);
 
+  // 4. Відправка повідомлення
   const handleSendMessage = async (content: string) => {
     if (!selectedChatId) return;
 
@@ -75,8 +94,9 @@ useEffect(() => {
     };
 
     try {
+      // Відправляємо через сокет (Бекенд збереже в Mongo і розішле всім)
       await chatSocketService.sendMessage(messageDto);
-      console.log("✅ Whisper: Message triggered via Socket");
+      console.log("✅ Whisper: Message sent via Socket");
     } catch (err) {
       console.error("❌ Whisper: Send error:", err);
     }
@@ -96,6 +116,7 @@ useEffect(() => {
         activeChatId={selectedChatId} 
         activeChatName={activeChat?.name}
         messages={messages} 
+        currentUserId={currentUserId} // ПЕРЕДАЄМО ТВІЙ ID ДЛЯ РОЗНОСУ ПО СТОРОНАХ
         onShowInfo={() => setShowInfo(!showInfo)} 
         onSendMessage={handleSendMessage}
       />

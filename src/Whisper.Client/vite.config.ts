@@ -20,8 +20,13 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://localhost:7055',
+        target: 'http://26.205.72.169:5055',
         changeOrigin: true,
+        secure: false,
+      },
+      '/ws': {
+        target: 'http://26.205.72.169:5055',
+        ws: true, // Підтримка WebSockets для SignalR
         secure: false,
       },
     },
