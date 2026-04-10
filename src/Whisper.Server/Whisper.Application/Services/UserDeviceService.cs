@@ -23,13 +23,13 @@ public class UserDeviceService : IUserDeviceService
 
     public async Task<DeviceDto?> GetDeviceByIdAsync(Guid userId, Guid deviceId)
     {
-        var device = await _repository.GetByDeviceIdAsync(deviceId);
+        var device = await _repository.GetByIdAsync(deviceId);
         return (device?.UserId == userId) ? _mapper.Map<DeviceDto>(device) : null;
     }
 
     public async Task DeleteDeviceAsync(Guid userId, Guid deviceId)
     {
-        var device = await _repository.GetByDeviceIdAsync(deviceId);
+        var device = await _repository.GetByIdAsync(deviceId);
         if (device != null && device.UserId == userId)
         {
             await _repository.Remove(deviceId);

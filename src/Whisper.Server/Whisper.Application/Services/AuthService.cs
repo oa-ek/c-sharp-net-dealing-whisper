@@ -82,7 +82,7 @@ namespace Whisper.Application.Services
             if (user == null || !BC.Verify(dto.Password, user.PasswordHash))
                 throw new Exception("Incorrect email or password");
 
-            var device = await _deviceRepository.GetByDeviceIdAsync(dto.DeviceId);
+            var device = await _deviceRepository.GetByIdAsync(dto.DeviceId);
             if (device == null)
                 throw new Exception("Device not recognized. Device registration required.");
 
@@ -109,7 +109,7 @@ namespace Whisper.Application.Services
                 throw new Exception("Invalid token");
 
             var deviceId = Guid.Parse(deviceIdClaim);
-            var device = await _deviceRepository.GetByDeviceIdAsync(deviceId);
+            var device = await _deviceRepository.GetByIdAsync(deviceId);
 
             if (device == null || device.RefreshToken != refreshToken || device.TokenExpiresAt <= DateTime.UtcNow)
                 throw new Exception("The session is out of date or invalid.");

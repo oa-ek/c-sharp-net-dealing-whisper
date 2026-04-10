@@ -21,6 +21,12 @@ namespace Whisper.Persistence.Repositories
 
         public virtual async Task<T?> AddAsync(T entity) => (await _dbSet.AddAsync(entity))?.Entity;
 
+        public virtual async Task<IEnumerable<T>> AddRangeAsync(IEnumerable<T> entities)
+        {
+            await _dbSet.AddRangeAsync(entities);
+            return entities;
+        } 
+
         public virtual async Task SaveAsync() => await _context.SaveChangesAsync();
 
         public virtual async Task<T?> Remove(Guid id)
