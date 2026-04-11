@@ -1,9 +1,9 @@
 import { useState } from "react";
-import agent from "../../../../api/agent";
-import { Avatar, AvatarFallback } from "../../../../components/ui/avatar";
-import { ScrollArea } from "../../../../components/ui/scroll-area";
-import { Button } from "../../../../components/ui/button";
-import { Input } from "../../../../components/ui/input";
+import agent from "../../../api/agent";
+import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
+import { ScrollArea } from "../../../components/ui/scroll-area";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
 import { 
   Search, 
   Settings, 
@@ -20,7 +20,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../../../../components/ui/dropdown-menu";
+} from "../../../components/ui/dropdown-menu";
 import logo from "@/components/ui/WhisperLogo.ico";
 
 interface SidebarProps {

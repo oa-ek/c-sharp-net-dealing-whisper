@@ -2,7 +2,6 @@
 using Whisper.Application.Interfaces.Repositories;
 using Whisper.Application.Interfaces.Services;
 using Whisper.Domain.Entities;
-using BC = BCrypt.Net.BCrypt;
 
 namespace Whisper.Application.Services
 {
@@ -11,18 +10,20 @@ namespace Whisper.Application.Services
         private readonly IUserRepository _userRepository;
         private readonly IUserDeviceRepository _deviceRepository;
         private readonly ITokenService _tokenService;
+        private readonly IPasswordService _passwordService;
 
         public AuthService(
             IUserRepository userRepository,
             IUserDeviceRepository deviceRepository,
-            ITokenService tokenService)
+            ITokenService tokenService,
+            IPasswordService passwordService)
         {
             _userRepository = userRepository;
             _deviceRepository = deviceRepository;
             _tokenService = tokenService;
+            _passwordService = passwordService;
         }
 
-        // --- РЕЄСТРАЦІЯ ---
         public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
         {
             var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
@@ -34,7 +35,8 @@ namespace Whisper.Application.Services
                 Id = Guid.NewGuid(),
                 Username = dto.Username,
                 Email = dto.Email,
-                PasswordHash = BC.HashPassword(dto.Password),
+                // Використовуємо новий сервіс для хешування
+                PasswordHash = _passwordService.HashPassword(dto.Password),
                 CreatedAt = DateTime.UtcNow,
                 LastSeen = DateTime.UtcNow,
                 ETwoFactorSecret = Guid.NewGuid().ToString()
@@ -58,7 +60,7 @@ namespace Whisper.Application.Services
             {
                 foreach (var key in dto.OneTimePreKeys)
                 {
-                    device.OneTimePreKeys.Add(new OneTimePreKey { PublicKey= key });
+                    device.OneTimePreKeys.Add(new OneTimePreKey { PublicKey = key });
                 }
             }
 
@@ -79,7 +81,8 @@ namespace Whisper.Application.Services
         public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
         {
             var user = await _userRepository.GetByEmailAsync(dto.Email);
-            if (user == null || !BC.Verify(dto.Password, user.PasswordHash))
+
+            if (user == null || !_passwordService.VerifyPassword(dto.Password, user.PasswordHash))
                 throw new Exception("Incorrect email or password");
 
             var device = await _deviceRepository.GetByIdAsync(dto.DeviceId);
@@ -135,7 +138,7 @@ namespace Whisper.Application.Services
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null) return false;
 
-            return BC.Verify(password, user.PasswordHash);
+            return _passwordService.VerifyPassword(password, user.PasswordHash);
         }
 
         public async Task<bool> ChangePasswordAsync(Guid userId, string newPassword)
@@ -143,9 +146,10 @@ namespace Whisper.Application.Services
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null) return false;
 
-            user.PasswordHash = BC.HashPassword(newPassword);
+            user.PasswordHash = _passwordService.HashPassword(newPassword);
             await _userRepository.UpdateAsync(user);
             await _userRepository.SaveAsync();
+
             return true;
         }
     }

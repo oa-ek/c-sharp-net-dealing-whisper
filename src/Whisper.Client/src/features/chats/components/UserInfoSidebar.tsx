@@ -1,6 +1,6 @@
-import { Avatar, AvatarFallback } from "../../../../components/ui/avatar";
-import { Button } from "../../../../components/ui/button";
-import { ScrollArea } from "../../../../components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
+import { Button } from "../../../components/ui/button";
+import { ScrollArea } from "../../../components/ui/scroll-area";
 import { X, Shield, Bell, Image as ImageIcon, FileText } from "lucide-react";
 
 interface UserInfoProps {

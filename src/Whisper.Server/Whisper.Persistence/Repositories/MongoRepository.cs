@@ -23,7 +23,14 @@ namespace Whisper.Persistence.Repositories
             await _collection.InsertOneAsync(entity);
             return entity;
         }
+        public virtual async Task<IEnumerable<T>> AddRangeAsync(IEnumerable<T> entities)
+        {
+            if (entities == null || !entities.Any())
+                return Enumerable.Empty<T>();
 
+            await _collection.InsertManyAsync(entities);
+            return entities;
+        }
         public virtual async Task SaveAsync() { }
 
         public virtual async Task<T?> Remove(Guid id) => await _collection.FindOneAndDeleteAsync(Builders<T>.Filter.Eq("Id", id));

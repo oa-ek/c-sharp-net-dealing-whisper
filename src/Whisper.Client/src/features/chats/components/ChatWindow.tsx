@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { SendHorizonal, Info, Paperclip, Smile } from "lucide-react";
-import { Button } from "../../../../components/ui/button";
-import { Input } from "../../../../components/ui/input";
-import { ScrollArea } from "../../../../components/ui/scroll-area";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
+import { ScrollArea } from "../../../components/ui/scroll-area";
 
 interface ChatWindowProps {
   activeChatId?: string;
