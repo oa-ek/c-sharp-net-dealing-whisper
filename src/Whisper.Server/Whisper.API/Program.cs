@@ -45,6 +45,7 @@ builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 //// Add services to the container.
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserDeviceService, UserDeviceService>();

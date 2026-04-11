@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import agent from "../api/agent";
 import chatSocketService from "../services/ChatSocketService"; 
 import { getAuthTokenFromDB } from "../api/db";
-import { ChatSidebar } from "../features/auth/chats/components/ChatSidebar";
-import { ChatWindow } from "../features/auth/chats/components/ChatWindow";
-import { UserInfoSidebar } from "../features/auth/chats/components/UserInfoSidebar";
+import { ChatSidebar } from "../features/chats/components/ChatSidebar";
+import { ChatWindow } from "../features/chats/components/ChatWindow";
+import { UserInfoSidebar } from "../features/chats/components/UserInfoSidebar";
 
 const ChatsPage = () => {
   const [chats, setChats] = useState<any[]>([]);

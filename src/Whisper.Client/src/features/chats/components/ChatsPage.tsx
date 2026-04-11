@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import agent from "../../../../api/agent";
-import { ChatSidebar } from "../../../../features/auth/chats/components/ChatSidebar";
-import { ChatWindow } from "../../../../features/auth/chats/components/ChatWindow";
-import { UserInfoSidebar } from "../../../../features/auth/chats/components/UserInfoSidebar";
+import agent from "../../../api/agent";
+import { ChatSidebar } from "./ChatSidebar";
+import { ChatWindow } from "./ChatWindow";
+import { UserInfoSidebar } from "./UserInfoSidebar";
 
 const ChatsPage = () => {
   const [chats, setChats] = useState<any[]>([]);
