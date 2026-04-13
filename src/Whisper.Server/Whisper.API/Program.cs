@@ -10,6 +10,7 @@ using Whisper.API.Controllers;
 using Whisper.Application.Interfaces.Repositories;
 using Whisper.Application.Interfaces.Services;
 using Whisper.Application.Services;
+using Whisper.Application.Common.Config;
 using Whisper.Persistence.Context;
 using Whisper.Persistence.Repositories;
 
@@ -92,6 +93,9 @@ builder.Services.AddAuthentication(options =>
         }
     };
 });
+
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Smtp"));
+builder.Services.AddTransient<IEmailService, EmailService>();
 
 builder.Services.AddCors(options =>
 {
