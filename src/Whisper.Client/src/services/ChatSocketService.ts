@@ -16,9 +16,9 @@ class ChatSocketService {
 
         try {
             await this.connection.start();
-            console.log("✅ Whisper WebSockets: Connected");
+            console.log("Whisper WebSockets: Connected");
         } catch (err) {
-            console.error("❌ Whisper WebSockets Connection Error: ", err);
+            console.error("Whisper WebSockets Connection Error: ", err);
             throw err;
         }
     }
@@ -31,7 +31,7 @@ class ChatSocketService {
         if (this.isConnected()) {
             await this.connection?.invoke("JoinChat", chatId);
         } else {
-            console.warn("⚠️ JoinChat failed: Socket not connected");
+            console.warn("JoinChat failed: Socket not connected");
         }
     }
 
@@ -39,7 +39,7 @@ class ChatSocketService {
         if (this.isConnected()) {
             await this.connection?.invoke("MessageSend", message);
         } else {
-            console.error("🚫 Cannot send message: WebSocket is not connected");
+            console.error("Cannot send message: WebSocket is not connected");
         }
     }
 

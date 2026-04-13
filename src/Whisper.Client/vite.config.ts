@@ -26,7 +26,7 @@ export default defineConfig({
       },
       '/ws': {
         target: 'http://26.205.72.169:5055',
-        ws: true, // Підтримка WebSockets для SignalR
+        ws: true, 
         secure: false,
       },
     },

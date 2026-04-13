@@ -10,7 +10,8 @@ namespace Whisper.Application.Interfaces.Services
         Task<AuthResponseDto> LoginAsync(LoginDto dto);
         Task<AuthResponseDto> RefreshTokenAsync(string accessToken, string refreshToken);
 
-        Task<bool> ChangePasswordAsync(Guid userId, string newPassword);
+        Task<bool> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword);
         Task<bool> VerifyCurrentPasswordAsync(Guid userId, string password);
+        Task<bool> LogoutAsync(Guid deviceId);
     }
 }
