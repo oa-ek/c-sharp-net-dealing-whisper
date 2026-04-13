@@ -8,20 +8,24 @@ const ChatsPage = () => {
   const [chats, setChats] = useState<any[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | undefined>(undefined);
   const [showInfo, setShowInfo] = useState(false);
-
   const [messages, setMessages] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
-  const loadChats = async () => {
+  const loadInitialData = async () => {
     try {
-      const data = await agent.Chats.list();
-      setChats(data);
+      const [chatsData, userData] = await Promise.all([
+        agent.Chats.list(),
+        agent.Users.getMe() 
+      ]);
+      setChats(chatsData);
+      setCurrentUser(userData);
     } catch (err) {
-      console.error("Помилка завантаження чатів:", err);
+      console.error("Помилка завантаження даних:", err);
     }
   };
 
   useEffect(() => {
-    loadChats();
+    loadInitialData();
   }, []);
 
   useEffect(() => {
@@ -42,15 +46,16 @@ const ChatsPage = () => {
 
   const handleSendMessage = async (content: string) => {
     if (!selectedChatId) return;
-
     try {
-      console.log(`🚀 Надсилаємо повідомлення в чат ${selectedChatId}:`, content);
-
-      const newMsg = { id: Date.now().toString(), ciphertext: content, isMine: true };
+      const newMsg = { 
+        id: Date.now().toString(), 
+        ciphertext: content, 
+        senderId: currentUser?.id, 
+        isMine: true 
+      };
       setMessages((prev) => [...prev, newMsg]);
-
     } catch (err) {
-      console.error("Помилка відправки повідомлення:", err);
+      console.error("Помилка відправки:", err);
     }
   };
 
@@ -58,16 +63,19 @@ const ChatsPage = () => {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-black selection:bg-emerald-500/30">
-      
       <ChatSidebar 
         chats={chats} 
         onSelectChat={(id) => setSelectedChatId(id)} 
-        refreshChats={loadChats} 
+        refreshChats={async () => {
+           const data = await agent.Chats.list();
+           setChats(data);
+        }} 
       />
       
       <ChatWindow 
         activeChatId={selectedChatId} 
         activeChatName={activeChat?.name}
+        currentUserId={currentUser?.id} 
         onShowInfo={() => setShowInfo(!showInfo)} 
         onSendMessage={handleSendMessage} 
         messages={messages} 

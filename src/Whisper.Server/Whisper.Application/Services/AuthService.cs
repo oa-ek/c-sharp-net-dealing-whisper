@@ -35,7 +35,6 @@ namespace Whisper.Application.Services
                 Id = Guid.NewGuid(),
                 Username = dto.Username,
                 Email = dto.Email,
-                // Використовуємо новий сервіс для хешування
                 PasswordHash = _passwordService.HashPassword(dto.Password),
                 CreatedAt = DateTime.UtcNow,
                 LastSeen = DateTime.UtcNow,
@@ -133,14 +132,6 @@ namespace Whisper.Application.Services
             };
         }
 
-        public async Task<bool> VerifyCurrentPasswordAsync(Guid userId, string password)
-        {
-            var user = await _userRepository.GetByIdAsync(userId);
-            if (user == null) return false;
-
-            return _passwordService.VerifyPassword(password, user.PasswordHash);
-        }
-
         public async Task<bool> ChangePasswordAsync(Guid userId, string newPassword)
         {
             var user = await _userRepository.GetByIdAsync(userId);
@@ -151,6 +142,38 @@ namespace Whisper.Application.Services
             await _userRepository.SaveAsync();
 
             return true;
+        }
+        public async Task<bool> LogoutAsync(Guid deviceId)
+        {
+            var device = await _deviceRepository.GetByIdAsync(deviceId);
+            if (device == null) return false;
+
+            device.RefreshToken = null;
+            device.TokenExpiresAt = DateTime.MinValue;
+
+            await _deviceRepository.SaveAsync();
+            return true;
+        }
+
+        public async Task<bool> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return false;
+
+            if (!_passwordService.VerifyPassword(currentPassword, user.PasswordHash))
+                return false;
+
+            user.PasswordHash = _passwordService.HashPassword(newPassword);
+
+            await _userRepository.SaveAsync();
+            return true;
+        }
+
+        public async Task<bool> VerifyCurrentPasswordAsync(Guid userId, string password)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return false;
+            return _passwordService.VerifyPassword(password, user.PasswordHash);
         }
     }
 }

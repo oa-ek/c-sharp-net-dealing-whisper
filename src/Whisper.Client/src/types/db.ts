@@ -9,7 +9,7 @@ export interface SignedKeyPair extends KeyPair {
 
 export interface AuthEntity {
   deviceId: string; 
-  token: string;
+  token: string | null;
   identity: KeyPair;
   signedPreKey: SignedKeyPair;
   oneTimePreKeys: KeyPair[];

@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using Whisper.Application.DTOs.AuthDTOs;
 using Whisper.Application.Interfaces.Services;
 
@@ -46,6 +48,33 @@ namespace Whisper.Server.Controllers
             {
                 return Unauthorized(new { message = ex.Message });
             }
+        }
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var deviceIdClaim = User.FindFirst("deviceId")?.Value;
+            if (string.IsNullOrEmpty(deviceIdClaim)) return BadRequest();
+
+            await _authService.LogoutAsync(Guid.Parse(deviceIdClaim));
+            return Ok();
+        }
+
+        [Authorize]
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized();
+
+            var result = await _authService.ChangePasswordAsync(
+                Guid.Parse(userIdClaim),
+                dto.CurrentPassword,
+                dto.NewPassword
+            );
+
+            if (!result) return BadRequest(new { message = "Невірний старий пароль" });
+            return Ok();
         }
 
         [HttpPost("refresh")]

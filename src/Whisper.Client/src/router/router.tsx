@@ -3,6 +3,7 @@ import AuthLayout from '../layout/AuthLayout';
 import LoginPage from '../pages/LoginPage';
 import SignUpPage from '../pages/SingUpPage';
 import ChatsPage from '../pages/ChatsPage'; 
+import ProtectedRoute from '../router/ProtectedRoute';
 
 export const router = createBrowserRouter([
   {
@@ -18,7 +19,16 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: '/chats', 
-    element: <ChatsPage />, 
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: '/chats',
+        element: <ChatsPage />,
+      },
+    ],
+  },
+  {
+    path: '*',
+    element: <Navigate to="/auth/login" replace />,
   },
 ]);
