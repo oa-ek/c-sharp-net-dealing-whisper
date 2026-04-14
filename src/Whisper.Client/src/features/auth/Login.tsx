@@ -42,11 +42,28 @@ export const Login = () => {
 
   return (
     <form onSubmit={handleLogin} className="flex flex-col gap-4 w-full">
-      {error && <p className="text-red-500 text-xs font-bold text-center bg-red-500/10 py-2 rounded">{error}</p>}
-      <AuthInput label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
-      <AuthInput label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
-      <button className="w-full py-3 mt-2 bg-white text-black font-black rounded-xl hover:bg-zinc-200 active:scale-95">
-        DECRYPT SESSION
+      {error && (
+        <p className="text-red-600 text-xs font-bold text-center bg-red-50 border border-red-100 py-3 rounded-xl animate-in fade-in zoom-in-95">
+          {error}
+        </p>
+      )}
+
+      <AuthInput 
+        label="Email Address" 
+        type="email" 
+        value={email} 
+        onChange={e => setEmail(e.target.value)} 
+      />
+
+      <AuthInput 
+        label="Secure Password" 
+        type="password" 
+        value={password} 
+        onChange={e => setPassword(e.target.value)} 
+      />
+
+      <button className="w-full py-4 mt-2 bg-linear-[135deg] from-[#64B59D] via-[#348F96] to-[#2D6BA3] text-white font-black rounded-xl hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-blue-200/50 uppercase tracking-wider">
+        start Whispering...
       </button>
     </form>
   );

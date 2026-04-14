@@ -17,7 +17,6 @@ interface UserInfoProps {
   onClose: () => void;
 }
 
-
 export const UserInfoSidebar = ({ user, onClose }: UserInfoProps) => {
   if (!user) return null;
 
@@ -25,7 +24,6 @@ export const UserInfoSidebar = ({ user, onClose }: UserInfoProps) => {
     const name = user.displayName || user.username || "?";
     return name[0].toUpperCase();
   };
-
 
   const formatLastSeen = (date?: string | Date) => {
     if (!date) return "невідомо";
@@ -45,61 +43,69 @@ export const UserInfoSidebar = ({ user, onClose }: UserInfoProps) => {
   };
 
   return (
-    <div className="w-80 h-full border-l border-zinc-800 bg-[#141414] flex flex-col animate-in slide-in-from-right duration-300 shadow-2xl z-50">
+    <div className="w-80 h-full border-l border-gray-200 bg-white flex flex-col animate-in slide-in-from-right duration-300 shadow-2xl z-50">
       
-      <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
-        <span className="text-zinc-400 font-bold uppercase text-[10px] tracking-[0.2em] px-2">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
+        <span className="text-gray-400 font-black uppercase text-[10px] tracking-[0.2em] px-2">
           Інформація
         </span>
         <Button 
           variant="ghost" 
           size="icon" 
           onClick={onClose} 
-          className="hover:bg-zinc-800 text-zinc-500 rounded-xl transition-colors"
+          className="hover:bg-gray-100 text-gray-400 rounded-xl transition-colors"
         >
           <X className="w-5 h-5" />
         </Button>
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-8 flex flex-col items-center text-center border-b border-zinc-900/50">
+        {/* Main Profile Info */}
+        <div className="p-8 flex flex-col items-center text-center border-b border-gray-50">
           <div className="relative mb-6">
-            <Avatar className="w-32 h-32 border-4 border-zinc-800 shadow-2xl">
+            <Avatar className="w-32 h-32 border-4 border-white shadow-xl shadow-blue-100/50">
               <AvatarImage src={user.pfpLink || ""} className="object-cover" />
-              <AvatarFallback className="text-4xl bg-zinc-900 text-zinc-400 uppercase font-black">
+              {/* Градієнт на фолбеку аватара */}
+              <AvatarFallback className="text-4xl bg-linear-[135deg] from-[#64B59D] via-[#348F96] to-[#2D6BA3] text-white uppercase font-black">
                 {getInitial()}
               </AvatarFallback>
             </Avatar>
-            <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 border-4 border-[#141414] rounded-full" />
+            {/* Статус-крапка */}
+            <div className="absolute bottom-2 right-2 w-6 h-6 bg-emerald-500 border-4 border-white rounded-full shadow-sm" />
           </div>
 
-          <h2 className="text-xl font-black text-white tracking-tight leading-tight">
+          <h2 className="text-2xl font-black text-[#111] tracking-tight leading-tight">
             {user.displayName || user.username || "Користувач"}
           </h2>
-          <p className="text-sm text-emerald-500 font-bold mt-1 tracking-wide">
+          {/* Акцентний колір для юзернейму */}
+          <p className="text-sm font-bold text-[#3E93E6] mt-1 tracking-wide">
             @{user.username}
           </p>
         </div>
 
-        <div className="p-6 space-y-6">
+        {/* Details Section */}
+        <div className="p-6 space-y-8">
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-zinc-500">
-                <Clock className="w-3.5 h-3.5" />
+          {/* Activity */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-gray-400">
+                <Clock className="w-4 h-4 text-[#40C3CC]" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Активність</span>
             </div>
-            <p className="text-sm text-zinc-300 font-medium pl-5.5">
-               Був у мережі: <span className="text-zinc-400">{formatLastSeen(user.lastSeen)}</span>
+            <p className="text-sm text-gray-600 font-medium pl-6">
+               Був у мережі: <span className="text-[#3E93E6] font-bold">{formatLastSeen(user.lastSeen)}</span>
             </p>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-zinc-500">
-                <Info className="w-3.5 h-3.5" />
+          {/* Bio */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-gray-400">
+                <Info className="w-4 h-4 text-[#40C3CC]" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Про себе</span>
             </div>
-            <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-4">
-                <p className="text-sm text-zinc-300 leading-relaxed italic">
+            <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 shadow-sm shadow-gray-100/50">
+                <p className="text-sm text-[#222] leading-relaxed italic">
                   {user.bio || "Опис профілю порожній."}
                 </p>
             </div>
@@ -108,8 +114,9 @@ export const UserInfoSidebar = ({ user, onClose }: UserInfoProps) => {
         </div>
       </ScrollArea>
 
-      <div className="p-6 text-center border-t border-zinc-900/50">
-         <p className="text-[9px] text-zinc-700 font-black uppercase tracking-[0.3em]">
+      {/* Footer із затіненням */}
+      <div className="p-6 text-center border-t border-gray-100 bg-gray-50/30">
+         <p className="text-[9px] text-gray-300 font-black uppercase tracking-[0.3em]">
            Whisper Protocol v2
          </p>
       </div>

@@ -196,11 +196,12 @@ export const ChatsPageFeature = () => {
   const isPartnerTyping = Array.from(typingUsers).length > 0;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-black selection:bg-emerald-500/30">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#f9fafb] selection:bg-[#40C3CC]/30">
       <ChatSidebar 
         chats={chats} 
         onSelectChat={(id) => setSelectedChatId(id)} 
-        refreshChats={loadChats} 
+        refreshChats={loadChats}
+        activeChatId={selectedChatId}
       />
       
       <ChatWindow 

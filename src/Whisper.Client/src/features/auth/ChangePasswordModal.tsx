@@ -25,20 +25,20 @@ export const ChangePasswordModal = ({ isOpen, onClose }: { isOpen: boolean, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-[#1a1a1a] border border-zinc-800 rounded-2xl p-6 shadow-2xl">
-        <div className="flex items-center gap-3 mb-6 text-emerald-500">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl p-6 shadow-xl">
+        <div className="flex items-center gap-3 mb-6 text-[#40C3CC]">
           <ShieldCheck className="w-6 h-6" />
-          <h3 className="text-xl font-bold text-white">Зміна пароля</h3>
+          <h3 className="text-xl font-bold text-[#111]">Зміна пароля</h3>
         </div>
         <div className="space-y-4">
-          <Input type="password" placeholder="Старий пароль" className="bg-zinc-900 border-zinc-800" onChange={e => setData({...data, old: e.target.value})} />
-          <Input type="password" placeholder="Новий пароль" className="bg-zinc-900 border-zinc-800" onChange={e => setData({...data, new: e.target.value})} />
-          <Input type="password" placeholder="Підтвердження" className="bg-zinc-900 border-zinc-800" onChange={e => setData({...data, confirm: e.target.value})} />
+          <Input type="password" placeholder="Старий пароль" className="bg-gray-50 border-gray-200 text-[#111]" onChange={e => setData({...data, old: e.target.value})} />
+          <Input type="password" placeholder="Новий пароль" className="bg-gray-50 border-gray-200 text-[#111]" onChange={e => setData({...data, new: e.target.value})} />
+          <Input type="password" placeholder="Підтвердження" className="bg-gray-50 border-gray-200 text-[#111]" onChange={e => setData({...data, confirm: e.target.value})} />
         </div>
         <div className="flex gap-3 mt-8">
-          <Button variant="ghost" className="flex-1 text-zinc-400" onClick={onClose}>Скасувати</Button>
-          <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={handleAction} disabled={loading}>
+          <Button variant="ghost" className="flex-1 text-gray-500 hover:bg-gray-100" onClick={onClose}>Скасувати</Button>
+          <Button className="flex-1 bg-whisper-gradient text-white border-none shadow-md hover:opacity-90" onClick={handleAction} disabled={loading}>
             {loading ? <Loader2 className="animate-spin" /> : "Оновити"}
           </Button>
         </div>
@@ -46,4 +46,3 @@ export const ChangePasswordModal = ({ isOpen, onClose }: { isOpen: boolean, onCl
     </div>
   );
 };
-
