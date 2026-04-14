@@ -65,13 +65,13 @@ const ChatsPage = () => {
         refreshChats={loadChats} 
       />
       
-      <ChatWindow 
+      {/* <ChatWindow 
         activeChatId={selectedChatId} 
         activeChatName={activeChat?.name}
         onShowInfo={() => setShowInfo(!showInfo)} 
         onSendMessage={handleSendMessage} 
         messages={messages} 
-      />
+      /> */}
       
       {showInfo && activeChat && (
         <UserInfoSidebar 

@@ -1,6 +1,7 @@
 import axios from "axios";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { getAuthTokenFromDB } from "./db";
+import type { UpdateUserDto, UserDto } from "../types/user";
 
 const agent = axios.create({
     baseURL: "http://26.205.72.169:5055",
@@ -53,6 +54,12 @@ const Chats = {
 const Users = {
     search: (username: string) => 
         requests.get<any[]>(`/api/v1/Users/search-user/${username}`),
+
+    me: () =>
+        requests.get<UserDto>(`/api/v1/Users/me`),
+
+    mePut: (body: UpdateUserDto) =>
+        requests.put<UserDto>('/api/v1/Users/me', body),
 };
 
 const agentService = { Chats, Users };
