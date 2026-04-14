@@ -17,6 +17,7 @@
     "@tailwindcss/vite": "^4.2.2",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "axios": "^1.13.6",
+    "babel-plugin-react-compiler": "^1.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dexie": "^4.3.0",

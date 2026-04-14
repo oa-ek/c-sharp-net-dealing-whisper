@@ -28,7 +28,7 @@ public class UsersController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> GetMe() => Ok(await _userService.GetMeAsync(UserId));
 
-    [HttpPatch("me")]
+    [HttpPut("me")]
     public async Task<IActionResult> UpdateMe([FromBody] UserUpdateDto dto) => Ok(await _userService.UpdateMeAsync(UserId, dto));
 
     [HttpGet("search-user/{username}")]

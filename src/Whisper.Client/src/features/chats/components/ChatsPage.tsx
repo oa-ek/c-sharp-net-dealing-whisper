@@ -204,12 +204,12 @@ export const ChatsPageFeature = () => {
         activeChatId={selectedChatId}
       />
       
-      <ChatWindow 
+       <ChatWindow 
         activeChatId={selectedChatId} 
         activeChatName={activeChat?.name}
         messages={messages.map(m => ({
           ...m,
-          ciphertext: decryptedMessages[m.id] || "🔒 Розшифрування..."
+          ciphertext: decryptedMessages[m.id] || "Розшифрування..."
         }))} 
         currentUserId={currentUserId}
         isPartnerTyping={isPartnerTyping}
