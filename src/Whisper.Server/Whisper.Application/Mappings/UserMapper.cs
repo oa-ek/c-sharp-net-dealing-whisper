@@ -11,7 +11,13 @@ namespace Whisper.Application.Mappings
     {
         public UserMapper()
         {
-            CreateMap<User, UserDto>();
+            CreateMap<User, UserDto>()
+                .ForMember(dest => dest.ActiveDeviceIds,
+                    opt => opt.MapFrom(src =>
+                        src.Devices != null
+                            ? src.Devices.Select(d => d.Id.ToString()).ToList()
+                            : new List<string>()));
+
             CreateMap<UserUpdateDto, User>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
         }

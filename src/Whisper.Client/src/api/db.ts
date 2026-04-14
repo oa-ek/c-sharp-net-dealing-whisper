@@ -1,31 +1,53 @@
 import Dexie, { type Table } from 'dexie';
-import type { AuthEntity } from '../types/db'; // Імпортуємо AuthEntity
+import type { AuthEntity } from '../types/db';
+
 
 export class WhisperDatabase extends Dexie {
   auth!: Table<AuthEntity>;
 
   constructor() {
     super('WhisperDB');
-    this.version(1).stores({
-      auth: '++id, deviceId' // Додав ++id як автоінкремент, якщо він потрібен
+    
+    this.version(3).stores({
+      auth: '++id, deviceId',
     });
   }
 }
 
 export const db = new WhisperDatabase();
 
-/**
- * Отримує JWT токен з IndexedDB (Dexie)
- */
 export const getAuthTokenFromDB = async (): Promise<string | null> => {
   try {
-    // Отримуємо останній запис авторизації
-    const authRecord = await db.auth.toCollection().last();
-    
-    // В твоїй AuthEntity поле називається 'token'
-    return authRecord ? authRecord.token : null;
-  } catch (error) {
-    console.error("Dexie error fetching token:", error);
+    const record = await db.auth.toCollection().last();
+    return record?.token || null;
+  } catch {
     return null;
+  }
+};
+
+export const getDeviceIdFromDB = async (): Promise<string | null> => {
+  try {
+    const record = await db.auth.toCollection().last();
+    return record?.deviceId || null;
+  } catch {
+    return null;
+  }
+};
+
+export const clearAuthData = async () => {
+  try {
+    await db.auth.toCollection().modify({ token: null });
+  } catch (error) {
+    console.error("Failed to clear auth token:", error);
+  }
+};
+
+export const wipeLocalData = async () => {
+  try {
+    await db.close();
+    await Dexie.delete("WhisperDB");
+    console.warn("Local database WhisperDB has been deleted.");
+  } catch (error) {
+    console.error("Failed to wipe local data:", error);
   }
 };

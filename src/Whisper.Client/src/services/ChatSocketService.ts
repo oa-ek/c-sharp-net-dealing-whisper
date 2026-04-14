@@ -1,5 +1,6 @@
 import * as signalR from "@microsoft/signalr";
-import type { MessageCreateDto, MessageDto, ReactionCreateDto } from "../types/chat";
+import type { MessageCreateDto, ReactionCreateDto } from "../types/chat";
+import { EncryptionService } from "./encryptionService";
 
 class ChatSocketService {
     private connection: signalR.HubConnection | null = null;
@@ -8,7 +9,7 @@ class ChatSocketService {
         if (this.connection?.state === signalR.HubConnectionState.Connected) return;
 
         this.connection = new signalR.HubConnectionBuilder()
-            .withUrl("http://26.205.72.169:5055/ws/v1/chat", {
+            .withUrl("https://26.205.72.169:7055/ws/v1/chat", {
                 accessTokenFactory: () => token,
             })
             .withAutomaticReconnect() 
@@ -16,14 +17,14 @@ class ChatSocketService {
 
         try {
             await this.connection.start();
-            console.log("✅ Whisper WebSockets: Connected");
+            console.log("Whisper WebSockets: Connected");
         } catch (err) {
-            console.error("❌ Whisper WebSockets Connection Error: ", err);
+            console.error("Whisper WebSockets Connection Error: ", err);
             throw err;
         }
     }
 
-    private isConnected(): boolean {
+    public isConnected(): boolean {
         return this.connection?.state === signalR.HubConnectionState.Connected;
     }
 
@@ -31,7 +32,7 @@ class ChatSocketService {
         if (this.isConnected()) {
             await this.connection?.invoke("JoinChat", chatId);
         } else {
-            console.warn("⚠️ JoinChat failed: Socket not connected");
+            console.warn("JoinChat failed: Socket not connected");
         }
     }
 
@@ -39,7 +40,7 @@ class ChatSocketService {
         if (this.isConnected()) {
             await this.connection?.invoke("MessageSend", message);
         } else {
-            console.error("🚫 Cannot send message: WebSocket is not connected");
+            console.error("Cannot send message: WebSocket is not connected");
         }
     }
 
@@ -60,10 +61,35 @@ class ChatSocketService {
             await this.connection?.invoke("TypingStop", chatId);
         }
     }
+    public async markAsRead(messageId: string) {
+        if (this.isConnected()) {
+            await this.connection?.invoke("MessageRead", messageId); 
+        }
+    }
+    public async confirmDelivery(messageId: string) {
+        if (this.isConnected()) {
+            await this.connection?.invoke("MessageDeliver", messageId);
+        }
+    }
 
+public onMessageNew(callback: (message: any) => void) {
+  this.connection?.on("message-new", async (message: any) => {
+    if (message.ciphertext && message.ciphertext.startsWith("#InitCode")) {
+      console.log("🔑 [Socket] Handshake received for chat:", message.chatId);
+      await EncryptionService.initializeReceiverSide(message.chatId, message.ciphertext);
+      return; 
+    }
 
-    public onMessageNew(callback: (message: MessageDto) => void) {
-        this.connection?.on("message-new", callback);
+    callback(message);
+  });
+}
+
+    public onMessageRead(callback: (updatedMessage: any) => void) {
+        this.connection?.on("message-read", callback);
+    }
+
+    public onMessageDelivered(callback: (updatedMessage: any) => void) {
+        this.connection?.on("message-delivered", callback);
     }
 
     public onTypingStarted(callback: (userId: string) => void) {
@@ -78,6 +104,7 @@ class ChatSocketService {
         if (this.connection) {
             this.connection.off("message-new");
             this.connection.off("typing-start");
+            this.connection.off("message-read");
             this.connection.off("typing-stop");
         }
     }

@@ -11,10 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DTOs\AttachmentDTOs\" />
+    <Folder Include="DTOs\" />
     <Folder Include="Helpers\" />
-    <Folder Include="Interfaces\Repositories\" />
-    <Folder Include="Common\" />
+    <Folder Include="Interfaces\" />
     <Folder Include="Validators\" />
   </ItemGroup>
 
