@@ -1,38 +1,63 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import agent from "../../../api/agent";
 import chatSocketService from "../../../services/ChatSocketService";
-import { getAuthTokenFromDB } from "../../../api/db";
+import { db, getAuthTokenFromDB } from "../../../api/db";
+import { EncryptionService } from "../../../services/encryptionService";
 import { ChatSidebar } from "./ChatSidebar";
 import { ChatWindow } from "./ChatWindow";
 import { UserInfoSidebar } from "./UserInfoSidebar";
 
-const ChatsPage = () => {
+export const ChatsPageFeature = () => {
   const [chats, setChats] = useState<any[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | undefined>(undefined);
   const [showInfo, setShowInfo] = useState(false);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const loadChats = async () => {
-    const data = await agent.Chats.list();
-    setChats(data);
-  };
+  const loadChats = useCallback(async () => {
+    try {
+      console.log("📡 [Feature] Оновлення списку чатів...");
+      const data = await agent.Chats.list();
+      setChats(data);
+    } catch (err) {
+      console.error("🚨 [Feature] Помилка завантаження чатів:", err);
+    }
+  }, []);
+
+  const syncHandshakes = useCallback(async (chatsList: any[]) => {
+    const auth = await db.auth.toCollection().first();
+    if (!auth) return;
+
+    for (const chat of chatsList) {
+      const isInitialized = auth.chats?.some(c => c.chatId === chat.id);
+      
+      if (!isInitialized) {
+        console.log(`🔍 [Sync] Новий чат ${chat.id}. Шукаємо системні ключі...`);
+        try {
+          const history = await agent.Chats.messages(chat.id);
+          const handshake = history.find((m: any) => m.ciphertext.startsWith("#InitCode"));
+          
+          if (handshake) {
+            await EncryptionService.initializeReceiverSide(chat.id, handshake.ciphertext);
+            console.log(`✅ [Sync] Ключі для ${chat.id} успішно відновлено`);
+          }
+        } catch (err) {
+          console.error(`🚨 [Sync] Помилка для чату ${chat.id}:`, err);
+        }
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const [chatsData, userData] = await Promise.all([
-          agent.Chats.list(),
-          agent.Users.getMe()
-        ]);
-        setChats(chatsData);
-        setCurrentUser(userData);
-      } catch (err) {
-        console.error("Помилка завантаження даних:", err);
-      }
-    };
-    init();
-  }, []);
+    console.log("🚀 [Feature] ChatsPage змонтовано");
+    loadChats();
+  }, [loadChats]);
+
+  useEffect(() => {
+    if (chats.length > 0) {
+      syncHandshakes(chats);
+    }
+  }, [chats, syncHandshakes]);
 
   useEffect(() => {
     const connect = async () => {
@@ -40,51 +65,57 @@ const ChatsPage = () => {
       if (!token) return;
 
       try {
-        await chatSocketService.startConnection(token);
-        console.log("✅ Socket connected");
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setCurrentUserId(payload.nameid);
+      } catch (e) { console.error("Token parse error", e); }
 
-chatSocketService.onMessageNew(async (newMsg) => {
-  await loadChats(); 
-  
-  setMessages((prev) => {
-    if (prev.some(m => m.id === newMsg.id)) return prev;
-    return [...prev, newMsg];
-  });
-});
+      try {
+        await chatSocketService.startConnection(token);
+        
+        chatSocketService.onMessageNew(async (newMsg) => {
+          if (newMsg.ciphertext.startsWith("#InitCode")) {
+            console.log("🔑 [Socket] Отримано новий Handshake");
+            await EncryptionService.initializeReceiverSide(newMsg.chatId, newMsg.ciphertext);
+            await loadChats(); 
+            return;
+          }
+
+          setMessages((prev) => {
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+          
+          await loadChats();
+        });
 
       } catch (err) {
-        console.error("SignalR Error:", err);
+        console.error("🚨 SignalR Error:", err);
       }
     };
-
     connect();
+
     return () => chatSocketService.offAll();
-  }, []);
+  }, [loadChats]);
 
   useEffect(() => {
-    if (!selectedChatId) {
-      setMessages([]);
-      return;
-    }
+    if (!selectedChatId) return;
 
-    const syncChat = async () => {
+    setMessages([]); 
+
+    const loadHistory = async () => {
       try {
-        const data = await agent.Chats.messages(selectedChatId);
-        setMessages(data);
+        const history = await agent.Chats.messages(selectedChatId);
+        setMessages(history.filter((m: any) => !m.ciphertext.startsWith("#InitCode")));
 
-        let retries = 10;
-        while (!chatSocketService.isConnected() && retries > 0) {
-          await new Promise(r => setTimeout(r, 300));
-          retries--;
+        if (chatSocketService.isConnected()) {
+          await chatSocketService.joinChat(selectedChatId);
         }
-
-        await chatSocketService.joinChat(selectedChatId);
       } catch (err) {
-        console.error("Помилка синхронізації чату:", err);
+        console.error("🚨 Помилка історії повідомлень:", err);
       }
     };
 
-    syncChat();
+    loadHistory();
   }, [selectedChatId]);
 
   const handleSendMessage = async (content: string) => {
@@ -97,7 +128,7 @@ chatSocketService.onMessageNew(async (newMsg) => {
         attachments: []
       });
     } catch (err) {
-      console.error("Помилка відправки:", err);
+      console.error("🚨 Помилка відправки:", err);
     }
   };
 
@@ -105,32 +136,30 @@ chatSocketService.onMessageNew(async (newMsg) => {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-black selection:bg-emerald-500/30">
-      <ChatSidebar
-        chats={chats}
-        onSelectChat={(id) => setSelectedChatId(id)}
-        refreshChats={loadChats}
+      <ChatSidebar 
+        chats={chats} 
+        onSelectChat={(id) => setSelectedChatId(id)} 
+        refreshChats={loadChats} 
       />
-
-      <ChatWindow
-        activeChatId={selectedChatId}
+      
+      <ChatWindow 
+        activeChatId={selectedChatId} 
         activeChatName={activeChat?.name}
-        currentUserId={currentUser?.id}
-        onShowInfo={() => setShowInfo(!showInfo)}
+        messages={messages} 
+        currentUserId={currentUserId}
+        onShowInfo={() => setShowInfo(!showInfo)} 
         onSendMessage={handleSendMessage}
-        messages={messages}
       />
-
+      
       {showInfo && activeChat && (
-        <UserInfoSidebar
-          user={{
-            name: activeChat.name,
-            username: `@${activeChat.name.toLowerCase().replace(/\s+/g, '_')}`
-          }}
-          onClose={() => setShowInfo(false)}
+        <UserInfoSidebar 
+          user={{ 
+            name: activeChat.name, 
+            username: `@id${activeChat.id.slice(0, 8)}` 
+          }} 
+          onClose={() => setShowInfo(false)} 
         />
       )}
     </div>
   );
 };
-
-export default ChatsPage;

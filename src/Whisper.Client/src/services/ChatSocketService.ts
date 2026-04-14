@@ -11,7 +11,7 @@ class ChatSocketService {
         if (this.connection?.state === signalR.HubConnectionState.Connected) return;
 
         this.connection = new signalR.HubConnectionBuilder()
-            .withUrl("http://26.205.72.169:5055/ws/v1/chat", {
+            .withUrl("https://26.205.72.169:7055/ws/v1/chat", {
                 accessTokenFactory: () => token,
             })
             .withAutomaticReconnect() 
@@ -65,24 +65,19 @@ class ChatSocketService {
     }
 
 
-    public onMessageNew(callback: (message: any) => void) {
-        this.connection?.on("message-new", async (message: any) => {
+public onMessageNew(callback: (message: any) => void) {
+    this.connection?.on("message-new", async (message: any) => {
         const auth = await db.auth.toCollection().first();
-        const sessionExists = auth?.chats?.some(c => c.chatId === message.chatId);
+        const chatExists = auth?.chats?.some(c => c.chatId === message.chatId);
 
-        if (!sessionExists && message.aliceIdentityKey && message.aliceEphemeralKey) {
-            await EncryptionService.initializeReceiverSide(
-            message.chatId,
-            message.aliceIdentityKey,
-            message.aliceEphemeralKey,
-            message.usedPreKeyId
-            );
-            
+        if (message.ciphertext.startsWith("#InitCode")) {
+            await EncryptionService.initializeReceiverSide(message.chatId, message.ciphertext);
+            return; 
         }
 
         callback(message);
-        });
-    }
+    });
+}
 
     public onTypingStarted(callback: (userId: string) => void) {
         this.connection?.on("typing-start", callback);

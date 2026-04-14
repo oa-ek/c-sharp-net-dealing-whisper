@@ -3,7 +3,7 @@ import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { getAuthTokenFromDB, clearAuthData } from "./db";
 
 const agent = axios.create({
-    baseURL: "http://26.205.72.169:5055",
+    baseURL: "https://26.205.72.169:7055",
 });
 
 agent.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
@@ -74,8 +74,8 @@ const Users = {
 };
 
 const Keys = {
-    getBundle: (userId: string, deviceId: string) => 
-        requests.get<any>(`/api/v1/Keys/bundle/${userId}/${deviceId}`),
+    getBundle: (deviceId: string) => 
+        requests.get<any>(`/api/v1/Keys/bundle/${deviceId}`),
     
     postBundle: (deviceId: string, keys: string[]) => 
         requests.post(`/api/v1/Keys/bundle/${deviceId}`, keys),

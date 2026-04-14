@@ -75,22 +75,22 @@ const handleLogoutFinal = async () => {
 };
 
 const handleCreateChat = async (targetUser: any) => {
-  console.log("🖱 Клік по юзеру:", targetUser.username);
   setIsCreating(true);
-  
   try {
     const serverChat = await agent.Chats.create(targetUser.id, targetUser.username);
-
     const serverChatId = serverChat.id.toString();
+
     const deviceIds = targetUser.activeDeviceIds || [];
     
-
-    if (deviceIds.length === 0) {
-      return;
-    }
-
     for (const deviceId of deviceIds) {
-      await EncryptionService.initializeChat(serverChatId, targetUser.id, deviceId);
+      const { systemContent } = await EncryptionService.initializeChat(serverChatId, targetUser.id, deviceId);
+      
+      await ChatSocketService.sendMessage({
+        chatId: serverChatId,
+        ciphertext: systemContent,
+        wrappedKey: "system_handshake",
+        attachments: []
+      });
     }
 
     setSearchQuery("");
@@ -98,6 +98,7 @@ const handleCreateChat = async (targetUser: any) => {
     await refreshChats();
     
   } catch (err: any) {
+    console.error("🚨 Помилка створення чату:", err);
   } finally {
     setIsCreating(false);
   }

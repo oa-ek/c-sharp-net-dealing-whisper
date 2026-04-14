@@ -15,7 +15,7 @@ namespace Whisper.Application.Services
             _userDeviceRepository = userDeviceRepository;
         }
 
-        public async Task<BundleDto> GetBundleAsync(string userId, string deviceId)
+        public async Task<BundleDto> GetBundleAsync(string deviceId)
         {
             Guid deviceGuid = Guid.Parse(deviceId);
 

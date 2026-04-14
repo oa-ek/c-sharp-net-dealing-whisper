@@ -17,11 +17,11 @@ namespace Whisper.API.Controllers
             _oneTimePreKeyService = oneTimePreKeyService;
         }
 
-        [HttpGet("bundle/{targetUserId}/{deviceId}")]
-        public async Task<IActionResult> GetBundle(string targetUserId, string deviceId)
+        [HttpGet("bundle/{deviceId}")]
+        public async Task<IActionResult> GetBundle(string deviceId)
         {
-            //return Ok(await _oneTimePreKeyService.GetBundleAsync(UserId, deviceId));
-            return Ok(await _oneTimePreKeyService.GetBundleAsync(targetUserId.ToString(), deviceId));
+            return Ok(await _oneTimePreKeyService.GetBundleAsync(deviceId));
+            //return Ok(await _oneTimePreKeyService.GetBundleAsync(targetUserId.ToString(), deviceId));
         }
 
         [HttpPost("bundle/{deviceId}")]
