@@ -12,10 +12,12 @@ export const ChatsPageFeature = () => {
   const [chats, setChats] = useState<any[]>([]);
   const [messages, setMessages] = useState<MessageDto[]>([]);
   const [decryptedMessages, setDecryptedMessages] = useState<Record<string, string>>({});
-  
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [selectedChatId, setSelectedChatId] = useState<string | undefined>(undefined);
   const [showInfo, setShowInfo] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  const [profileData, setProfileData] = useState<any>(null);
 
   const getChatSharedKey = async (chatId: string) => {
     const auth = await db.auth.toCollection().first();
@@ -29,7 +31,6 @@ export const ChatsPageFeature = () => {
     const results: Record<string, string> = {};
     for (const msg of msgList) {
       if (msg.wrappedKey === "handshake_v1") continue;
-      
       try {
         results[msg.id] = await EncryptionService.decryptMessage(msg.ciphertext, msg.wrappedKey, key);
       } catch (e) {
@@ -41,34 +42,28 @@ export const ChatsPageFeature = () => {
 
   const loadChats = useCallback(async () => {
     try {
-      console.log("📡 [Feature] Оновлення списку чатів...");
       const data = await agent.Chats.list();
       setChats(data);
     } catch (err) {
-      console.error("🚨 [Feature] Помилка завантаження чатів:", err);
+      console.error("🚨 Помилка чатів:", err);
     }
   }, []);
 
   const syncHandshakes = useCallback(async (chatsList: any[]) => {
     const auth = await db.auth.toCollection().first();
     if (!auth) return;
-
     for (const chat of chatsList) {
       const isInitialized = auth.chats?.some(c => c.chatId === chat.id);
-      
       if (!isInitialized) {
-        console.log(`🔍 [Sync] Новий чат ${chat.id}. Шукаємо системні ключі...`);
         try {
           const history = await agent.Chats.messages(chat.id);
           const handshake = history.find((m: any) => m.ciphertext.startsWith("#InitCode"));
-          
           if (handshake) {
             await EncryptionService.initializeReceiverSide(chat.id, handshake.ciphertext);
-            console.log(`✅ [Sync] Ключі для ${chat.id} успішно відновлено`);
             await loadChats();
           }
         } catch (err) {
-          console.error(`🚨 [Sync] Помилка для чату ${chat.id}:`, err);
+          console.error(`🚨 Sync error ${chat.id}:`, err);
         }
       }
     }
@@ -113,37 +108,53 @@ export const ChatsPageFeature = () => {
             return [...prev, newMsg];
           });
           
+          setTypingUsers(prev => {
+            const next = new Set(prev);
+            next.delete(newMsg.senderId);
+            return next;
+          });
+
           await loadChats();
+        });
+
+        chatSocketService.onMessageRead((updatedMsg: any) => {
+          setMessages((prev) => 
+            prev.map(m => m.id === updatedMsg.id ? { ...m, isRead: true } : m)
+          );
+        });
+
+        chatSocketService.onTypingStarted((userId) => {
+          if (userId !== currentUserId) setTypingUsers(prev => new Set(prev).add(userId));
+        });
+
+        chatSocketService.onTypingStopped((userId) => {
+          setTypingUsers(prev => {
+            const next = new Set(prev);
+            next.delete(userId);
+            return next;
+          });
         });
 
       } catch (err) { console.error("🚨 SignalR Error:", err); }
     };
     connect();
-
     return () => chatSocketService.offAll();
-  }, [loadChats]);
+  }, [loadChats, currentUserId]);
 
   useEffect(() => {
     if (!selectedChatId) return;
-
     setMessages([]); 
-
     const loadHistory = async () => {
       try {
         const history = await agent.Chats.messages(selectedChatId);
         const displayMsgs = history.filter((m: any) => !m.ciphertext.startsWith("#InitCode"));
-        
         setMessages(displayMsgs);
         await decryptBatch(displayMsgs, selectedChatId);
-
         if (chatSocketService.isConnected()) {
           await chatSocketService.joinChat(selectedChatId);
         }
-      } catch (err) {
-        console.error("🚨 Помилка історії повідомлень:", err);
-      }
+      } catch (err) { console.error("🚨 Помилка історії:", err); }
     };
-
     loadHistory();
   }, [selectedChatId, decryptBatch]);
 
@@ -151,17 +162,12 @@ export const ChatsPageFeature = () => {
     if (!selectedChatId) return;
     try {
       const sharedKey = await getChatSharedKey(selectedChatId);
-      if (!sharedKey) {
-        console.error("SharedKey not found!");
-        return;
-      }
-
+      if (!sharedKey) return;
       const { ciphertext, wrappedKey } = await EncryptionService.encryptMessage(content, sharedKey);
-
       await chatSocketService.sendMessage({
         chatId: selectedChatId,
-        ciphertext: ciphertext,
-        wrappedKey: wrappedKey,
+        ciphertext,
+        wrappedKey,
         attachments: []
       });
     } catch (err) {
@@ -169,12 +175,25 @@ export const ChatsPageFeature = () => {
     }
   };
 
-  const activeChat = chats.find((c) => c.id === selectedChatId);
+  const handleOpenProfile = async () => {
+    const activeChat = chats.find((c) => c.id === selectedChatId);
+    if (!activeChat) return;
 
-  const messagesToRender = messages.map(m => ({
-    ...m,
-    ciphertext: decryptedMessages[m.id] || "🔒 Розшифрування..."
-  }));
+    try {
+      const results = await agent.Users.search(activeChat.name);
+      const user = results.find((u: any) => u.username === activeChat.name) || results[0];
+      
+      if (user) {
+        setProfileData(user);
+        setShowInfo(true);
+      }
+    } catch (err) {
+      console.error("Не вдалося завантажити профіль:", err);
+    }
+  };
+
+  const activeChat = chats.find((c) => c.id === selectedChatId);
+  const isPartnerTyping = Array.from(typingUsers).length > 0;
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-black selection:bg-emerald-500/30">
@@ -187,19 +206,23 @@ export const ChatsPageFeature = () => {
       <ChatWindow 
         activeChatId={selectedChatId} 
         activeChatName={activeChat?.name}
-        messages={messagesToRender} 
+        messages={messages.map(m => ({
+          ...m,
+          ciphertext: decryptedMessages[m.id] || "🔒 Розшифрування..."
+        }))} 
         currentUserId={currentUserId}
-        onShowInfo={() => setShowInfo(!showInfo)} 
+        isPartnerTyping={isPartnerTyping}
+        onShowInfo={handleOpenProfile} 
         onSendMessage={handleSendMessage}
       />
       
-      {showInfo && activeChat && (
+      {showInfo && (
         <UserInfoSidebar 
-          user={{ 
-            name: activeChat.name, 
-            username: `@id${activeChat.id.slice(0, 8)}` 
+          user={profileData} 
+          onClose={() => {
+            setShowInfo(false);
+            setProfileData(null);
           }} 
-          onClose={() => setShowInfo(false)} 
         />
       )}
     </div>

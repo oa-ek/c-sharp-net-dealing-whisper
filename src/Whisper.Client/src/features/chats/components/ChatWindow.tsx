@@ -3,6 +3,7 @@ import { SendHorizonal, Info, Paperclip, Smile } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { ScrollArea } from "../../../components/ui/scroll-area";
+import chatSocketService from "../../../services/ChatSocketService";
 
 interface ChatWindowProps {
   activeChatId?: string;
@@ -11,6 +12,7 @@ interface ChatWindowProps {
   messages: any[]; 
   onSendMessage: (content: string) => void;
   currentUserId: string | null;
+  isPartnerTyping: boolean; 
 }
 
 export const ChatWindow = ({ 
@@ -19,10 +21,34 @@ export const ChatWindow = ({
   onShowInfo, 
   messages, 
   onSendMessage,
-  currentUserId 
+  currentUserId,
+  isPartnerTyping 
 }: ChatWindowProps) => {
   const [inputText, setInputText] = useState("");
+  const [isLocalTyping, setIsLocalTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!activeChatId || !inputText.trim()) {
+      if (isLocalTyping) {
+        chatSocketService.stopTyping(activeChatId!);
+        setIsLocalTyping(false);
+      }
+      return;
+    }
+
+    if (!isLocalTyping) {
+      chatSocketService.startTyping(activeChatId);
+      setIsLocalTyping(true);
+    }
+
+    const timeout = setTimeout(() => {
+      chatSocketService.stopTyping(activeChatId);
+      setIsLocalTyping(false);
+    }, 3000);
+
+    return () => clearTimeout(timeout);
+  }, [inputText, activeChatId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -35,12 +61,14 @@ export const ChatWindow = ({
       }
     }, 100);
     return () => clearTimeout(timer);
-  }, [messages]);
+  }, [messages, isPartnerTyping]); 
 
   const handleSend = () => {
     if (!inputText.trim()) return;
     onSendMessage(inputText);
     setInputText("");
+    if (activeChatId) chatSocketService.stopTyping(activeChatId);
+    setIsLocalTyping(false);
   };
 
   if (!activeChatId) {
@@ -63,7 +91,15 @@ export const ChatWindow = ({
             <span className="text-zinc-200 font-medium block group-hover:text-emerald-400 transition-colors">
               {activeChatName}
             </span>
-            <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-tighter">Connected</span>
+            {isPartnerTyping ? (
+                <span className="text-[10px] text-emerald-400 font-bold animate-pulse uppercase tracking-widest">
+                  Друкує...
+                </span>
+            ) : (
+                <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-tighter">
+                  Connected
+                </span>
+            )}
           </div>
         </div>
         <Button variant="ghost" size="icon" onClick={onShowInfo} className="text-zinc-400 hover:text-emerald-400">
@@ -74,31 +110,38 @@ export const ChatWindow = ({
       <div className="flex-1 min-h-0 relative">
         <ScrollArea ref={scrollRef} className="h-full w-full">
           <div className="p-6 space-y-4 max-w-3xl mx-auto">
-            {messages
-              .filter(msg => !msg.ciphertext.startsWith("#InitCode"))
-              .map((msg: any) => {
+            {messages.map((msg: any) => {
                 const isMine = msg.senderId === currentUserId;
-
-              return (
-                <div 
-                  key={msg.id} 
-                  className={`flex ${isMine ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}
-                >
-                  <div className={`p-3.5 rounded-2xl max-w-[75%] text-sm shadow-sm ${
-                    isMine 
-                      ? "bg-emerald-600/20 border border-emerald-500/30 text-emerald-50 rounded-tr-none" 
-                      : "bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-tl-none"
-                  }`}>
-                    <p className="leading-relaxed whitespace-pre-wrap break-words">
-                      {msg.ciphertext || "Порожнє повідомлення"}
-                    </p>
-                    <span className="text-[9px] block mt-1 opacity-40 text-right">
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                return (
+                  <div 
+                    key={msg.id} 
+                    className={`flex ${isMine ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                  >
+                    <div className={`p-3.5 rounded-2xl max-w-[75%] text-sm shadow-sm ${
+                      isMine 
+                        ? "bg-emerald-600/20 border border-emerald-500/30 text-emerald-50 rounded-tr-none" 
+                        : "bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-tl-none"
+                    }`}>
+                      <p className="leading-relaxed whitespace-pre-wrap break-words">
+                        {msg.ciphertext}
+                      </p>
+                      <span className="text-[9px] block mt-1 opacity-40 text-right">
+                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              );
+                );
             })}
+
+            {isPartnerTyping && (
+              <div className="flex justify-start animate-in fade-in duration-300">
+                <div className="bg-zinc-900 border border-zinc-800 px-4 py-3 rounded-2xl rounded-tl-none flex gap-1 items-center">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce"></span>
+                </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
       </div>
