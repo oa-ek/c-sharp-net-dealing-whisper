@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
 import logo from "@/components/ui/WhisperLogo.ico";
+import { UserProfile } from "../../users/components/UserProfileModal";
 
 interface SidebarProps {
   chats: any[];
@@ -35,7 +36,8 @@ export const ChatSidebar = ({ chats, onSelectChat, refreshChats, activeChatId }:
   const [isSearching, setIsSearching] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  // const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
   const [shouldWipe, setShouldWipe] = useState(false);
 
@@ -120,12 +122,12 @@ export const ChatSidebar = ({ chats, onSelectChat, refreshChats, activeChatId }:
           <DropdownMenuContent align="end" className="w-56 bg-white border-gray-200 text-gray-700 shadow-2xl rounded-2xl p-1 animate-in zoom-in-95">
             <DropdownMenuLabel className="text-gray-400 font-bold text-[10px] uppercase tracking-widest px-3 py-2">Мій акаунт</DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-gray-100" />
-            <DropdownMenuItem className="hover:bg-gray-50 cursor-pointer py-2.5 px-3 rounded-xl focus:bg-gray-50 transition-colors">
+            <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="hover:bg-gray-50 cursor-pointer py-2.5 px-3 rounded-xl focus:bg-gray-50 transition-colors">
               <User className="mr-2 h-4 w-4 text-[#348F96]" /> Профіль
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIsSettingsOpen(true)} className="hover:bg-gray-50 cursor-pointer py-2.5 px-3 rounded-xl focus:bg-gray-50 transition-colors">
+            {/* <DropdownMenuItem onClick={() => setIsSettingsOpen(true)} className="hover:bg-gray-50 cursor-pointer py-2.5 px-3 rounded-xl focus:bg-gray-50 transition-colors">
               <Settings className="mr-2 h-4 w-4 text-gray-400" /> Налаштування
-            </DropdownMenuItem>
+            </DropdownMenuItem> */}
             <DropdownMenuSeparator className="bg-gray-100" />
             <DropdownMenuItem onClick={() => setIsLogoutOpen(true)} className="hover:bg-red-50 !text-red-600 cursor-pointer py-2.5 px-3 rounded-xl focus:bg-red-50 transition-colors">
               <LogOut className="mr-2 h-4 w-4" /> Вийти
@@ -231,9 +233,14 @@ export const ChatSidebar = ({ chats, onSelectChat, refreshChats, activeChatId }:
         </div>
       </div>
 
-      <ChangePasswordModal 
+      {/* <ChangePasswordModal 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
+      /> */}
+
+      <UserProfile
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
       />
 
       {/* Logout Modal */}

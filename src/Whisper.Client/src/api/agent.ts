@@ -52,6 +52,8 @@ const Auth = {
     logout: () => requests.post("/api/v1/Auth/logout", {}),
     refresh: (token: string) => requests.post<any>("/api/v1/Auth/refresh", { refreshToken: token }),
     changePassword: (body: any) => requests.post("/api/v1/Auth/change-password", body),
+    forgotPassword: (email: string) => requests.post("/api/v1/Auth/forgot-password", { email }),
+    resetPassword: (body: { email: string, code: string, newPassword: string }) => requests.post("/api/v1/Auth/reset-password", body),
 };
 
 const Chats = {

@@ -30,6 +30,9 @@ namespace Whisper.Domain.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime LastSeen { get; set; } = DateTime.UtcNow;
 
+        public string? PasswordResetCode { get; set; }
+        public DateTime? ResetCodeExpiresAt { get; set; }
+
         public virtual ICollection<UserDevice> Devices { get; set; } = new List<UserDevice>();
         public virtual ICollection<ChatMember> ChatMembers { get; set; } = new List<ChatMember>();
 

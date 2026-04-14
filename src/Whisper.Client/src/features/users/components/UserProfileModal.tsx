@@ -9,7 +9,7 @@ import { Loader2 } from 'lucide-react';
 export const UserProfile = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
     const [user, setUser] = useState<UserDto | null>(null);
     const [data, setData] = useState({ old: "", new: "", confirm: "" });
-   
+    const [loading, setLoading] = useState(false);
 
     const loadUser = async () => {
         try {
@@ -19,40 +19,50 @@ export const UserProfile = ({ isOpen, onClose }: { isOpen: boolean, onClose: () 
             console.log(`Could not get the user: ${err}`);
         }
     }
+    useEffect(() => {
+        if (isOpen) {
+            const loadUser = async () => {
+                try {
+                    const userData = await agent.Users.me();
+                    setUser(userData);
+                } catch (err) {
+                    console.log(`Error: ${err}`);
+                }
+            };
+            loadUser();
+        }
+    }, [isOpen]); // Спрацює при кожному відкритті
+    
 
-    const [loading, setLoading] = useState(false);
+    if (!isOpen) return null;
 
-  if (!isOpen) return null;
-
-  const handlePasswordChange = async () => {
-    if (data.new !== data.confirm) return alert("Паролі не збігаються");
-    setLoading(true);
-    try {
-      await agent.Auth.changePassword({ currentPassword: data.old, newPassword: data.new });
-      alert("Готово!");
-    } catch {
-      alert("Помилка");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleClose = async () => {
-    try {
-        await agent.Users.mePut({
-            displayName: user?.displayName,
-            bio: user?.bio,
-            pfpLink: user?.pfpLink
-        } as UpdateUserDto);
-            onClose();
-        } catch (err) {
-            console.log("Could not update user data" + err);
+    const handlePasswordChange = async () => {
+        if (data.new !== data.confirm) return alert("Паролі не збігаються");
+        setLoading(true);
+        try {
+            await agent.Auth.changePassword({ currentPassword: data.old, newPassword: data.new });
+            alert("Готово!");
+        } catch {
+            
+        } finally {
+            
         }
     };
 
-    useEffect(() => {
-        loadUser();    
-    }, []);
+    const handleClose = async () => {
+        try {
+            await agent.Users.mePut({
+                displayName: user?.displayName,
+                bio: user?.bio,
+                pfpLink: user?.pfpLink
+            } as UpdateUserDto);
+                onClose();
+            } catch (err) {
+                console.log("Could not update user data" + err);
+            }
+        };
+
+   
 
 
 
@@ -63,12 +73,12 @@ export const UserProfile = ({ isOpen, onClose }: { isOpen: boolean, onClose: () 
                     <div className='flex items-center gap-3 p-2'>
                         <div className='rounded-full p-1 bg-linear-'>
                             <Avatar className="w-42 h-42">
-                                <AvatarFallback className="text-6xl bg-linear-[115deg] from-teal-300/60 to-sky-500/60 text-black uppercase">{user?.displayName.substring(0,2)}</AvatarFallback>
+                                <AvatarFallback className="text-6xl bg-linear-[115deg] from-teal-300/60 to-sky-500/60 text-black uppercase">{user?.displayName?.slice(0, 2).toUpperCase() || "WP"}</AvatarFallback>
                             </Avatar>
                         </div>
                         <div className='w-full'>
                             <div className='flex justify-between'>
-                                <Input type="text" className='border-0 font-bold' style={{ fontSize: '22px'}}
+                                <Input type="text" className='border-0 font-bold' style={{ fontSize: '22px'} } placeholder="Display Name"
                                     value={user?.displayName}
                                     onChange={e => setUser(prev => prev ? {...user, displayName: e.target.value} as UserDto : prev)}/>
                                 <a onClick={handleClose} className='text-2xl font-bold'>✕</a>    

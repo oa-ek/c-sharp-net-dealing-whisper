@@ -13,5 +13,7 @@ namespace Whisper.Application.Interfaces.Services
         Task<bool> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword);
         Task<bool> VerifyCurrentPasswordAsync(Guid userId, string password);
         Task<bool> LogoutAsync(Guid deviceId);
+        Task<bool> SendPasswordResetCodeAsync(string email);
+        Task<bool> ResetPasswordWithCodeAsync(ResetPasswordDto dto);
     }
 }
