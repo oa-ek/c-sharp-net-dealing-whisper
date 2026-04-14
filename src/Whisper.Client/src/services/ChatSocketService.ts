@@ -66,17 +66,15 @@ class ChatSocketService {
 
 
 public onMessageNew(callback: (message: any) => void) {
-    this.connection?.on("message-new", async (message: any) => {
-        const auth = await db.auth.toCollection().first();
-        const chatExists = auth?.chats?.some(c => c.chatId === message.chatId);
+  this.connection?.on("message-new", async (message: any) => {
+    if (message.ciphertext && message.ciphertext.startsWith("#InitCode")) {
+      console.log("🔑 [Socket] Handshake received for chat:", message.chatId);
+      await EncryptionService.initializeReceiverSide(message.chatId, message.ciphertext);
+      return; 
+    }
 
-        if (message.ciphertext.startsWith("#InitCode")) {
-            await EncryptionService.initializeReceiverSide(message.chatId, message.ciphertext);
-            return; 
-        }
-
-        callback(message);
-    });
+    callback(message);
+  });
 }
 
     public onTypingStarted(callback: (userId: string) => void) {

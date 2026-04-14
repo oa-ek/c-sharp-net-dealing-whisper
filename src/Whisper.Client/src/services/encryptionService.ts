@@ -6,6 +6,10 @@ import type { ChatSession } from "../types/db";
 const INIT_TAG = "#InitCode";
 const END_TAG = "-#InitCode";
 
+const debugDH = (name: string, value: Uint8Array) => {
+  console.log(`[DH Debug] ${name}:`, CryptoService.toB64(value).slice(0, 10) + "...");
+};
+
 export const EncryptionService = {
   async initializeChat(serverChatId: string, recipientId: string, recipientDeviceId: string) {
     try {
@@ -14,15 +18,25 @@ export const EncryptionService = {
       if (!myAuth) throw new Error("Сесія не ініціалізована");
 
       const ephemeral = CryptoService.generateOneTimePreKeys(1)[0];
-      const dh1 = CryptoService.calculateDH(myAuth.identity.privateKey, bundle.signedPreKey);
-      const dh2 = CryptoService.calculateDH(ephemeral.privateKey, bundle.publicIdentityKey);
+
+      // Використовуємо нашу математичну конвертацію
+      const aliceIdentityPrivX = await CryptoService.edPrivToX(myAuth.identity.privateKey);
+      const bobIdentityPubX = CryptoService.edPubToX(bundle.publicIdentityKey);
+
+      const dh1 = CryptoService.calculateDH(aliceIdentityPrivX, bundle.signedPreKey);
+      const dh2 = CryptoService.calculateDH(ephemeral.privateKey, bobIdentityPubX);
       const dh3 = CryptoService.calculateDH(ephemeral.privateKey, bundle.signedPreKey);
       const dh4 = bundle.oneTimePreKey 
         ? CryptoService.calculateDH(ephemeral.privateKey, bundle.oneTimePreKey)
         : new Uint8Array(32).fill(0);
 
-      const masterKey = await CryptoService.deriveMasterKey([dh1, dh2, dh3, dh4]);
-      const masterKeyB64 = CryptoService.toB64(new Uint8Array(masterKey));
+      debugDH("DH1", dh1);
+      debugDH("DH2", dh2);
+      debugDH("DH3", dh3);
+      debugDH("DH4", dh4);
+
+      const masterKey = await CryptoService.deriveMasterKey([dh1, dh2, dh3, dh4] as any);
+      const masterKeyB64 = CryptoService.toB64(new Uint8Array(masterKey as any));
 
       const currentAuth = await db.auth.toCollection().first();
       if (currentAuth) {
@@ -34,44 +48,52 @@ export const EncryptionService = {
           lastMessageAt: new Date(),
           membersId: [recipientId]
         };
-        const updatedChats = [...(currentAuth.chats || []).filter(c => c.chatId !== serverChatId), newSession];
-        await db.auth.put({ ...currentAuth, chats: updatedChats });
+        await db.auth.put({
+          ...currentAuth,
+          chats: [...(currentAuth.chats || []).filter(c => c.chatId !== serverChatId), newSession]
+        });
       }
 
-      const systemContent = `${INIT_TAG}\n${myAuth.identity.publicKey}\n${ephemeral.publicKey}\n${bundle.oneTimePreKeyId || 'none'}\n${END_TAG}\nSecure session established`;
-
+      const systemContent = `${INIT_TAG}|${myAuth.identity.publicKey}|${ephemeral.publicKey}|${bundle.oneTimePreKey || 'none'}|${END_TAG}`;
       return { systemContent };
     } catch (error) {
-      console.error("🚨 X3DH Alice Error:", error);
+      console.error("🚨 Alice Handshake Error:", error);
       throw error;
     }
   },
 
   async initializeReceiverSide(serverChatId: string, messageContent: string) {
     try {
-        console.log(messageContent);
-      if (!messageContent.startsWith(INIT_TAG)) return null;
-
-      const lines = messageContent.split('\n');
-      const aliceIdentityKey = lines[1];
-      const aliceEphemeralKey = lines[2];
-      const usedPreKeyId = lines[3] === 'none' ? undefined : lines[3];
+      const parts = messageContent.split('|');
+      const aliceIdentityKey = parts[1];
+      const aliceEphemeralKey = parts[2];
+      const usedPreKeyPub = parts[3] === 'none' ? undefined : parts[3];    
 
       const myAuth = await db.auth.toCollection().first();
       if (!myAuth) throw new Error("Сесія не ініціалізована");
 
-      const dh1 = CryptoService.calculateDH(myAuth.signedPreKey.privateKey, aliceIdentityKey);
-      const dh2 = CryptoService.calculateDH(myAuth.identity.privateKey, aliceEphemeralKey);
+      const aliceIdentityPubX = CryptoService.edPubToX(aliceIdentityKey);
+      const bobIdentityPrivX = await CryptoService.edPrivToX(myAuth.identity.privateKey);
+
+      const dh1 = CryptoService.calculateDH(myAuth.signedPreKey.privateKey, aliceIdentityPubX);
+      const dh2 = CryptoService.calculateDH(bobIdentityPrivX, aliceEphemeralKey);
       const dh3 = CryptoService.calculateDH(myAuth.signedPreKey.privateKey, aliceEphemeralKey);
       
       let dh4 = new Uint8Array(32).fill(0);
-      if (usedPreKeyId) {
-        const opk = myAuth.oneTimePreKeys.find(k => k.publicKey === usedPreKeyId);
-        if (opk) dh4 = CryptoService.calculateDH(opk.privateKey, aliceEphemeralKey);
+      if (usedPreKeyPub) {
+        const opk = myAuth.oneTimePreKeys.find(k => k.publicKey === usedPreKeyPub);
+        if (opk) {
+          dh4 = CryptoService.calculateDH(opk.privateKey, aliceEphemeralKey);
+        }
       }
 
-      const masterKey = await CryptoService.deriveMasterKey([dh1, dh2, dh3, dh4]);
-      const masterKeyB64 = CryptoService.toB64(new Uint8Array(masterKey));
+      debugDH("DH1", dh1);
+      debugDH("DH2", dh2);
+      debugDH("DH3", dh3);
+      debugDH("DH4", dh4);
+
+      const masterKey = await CryptoService.deriveMasterKey([dh1, dh2, dh3, dh4] as any);
+      const masterKeyB64 = CryptoService.toB64(new Uint8Array(masterKey as any));
 
       const currentAuth = await db.auth.toCollection().first();
       if (currentAuth) {
@@ -83,13 +105,15 @@ export const EncryptionService = {
           lastMessageAt: new Date(),
           membersId: []
         };
-        const updatedChats = [...(currentAuth.chats || []).filter(c => c.chatId !== serverChatId), newSession];
-        await db.auth.put({ ...currentAuth, chats: updatedChats });
+        await db.auth.put({
+          ...currentAuth,
+          chats: [...(currentAuth.chats || []).filter(c => c.chatId !== serverChatId), newSession]
+        });
+        console.log("✅ Боб успішно зберіг sharedKey:", masterKeyB64);
       }
-      console.log(`✅ Боб ініціалізував чат ${serverChatId} через системне повідомлення`);
       return masterKeyB64;
     } catch (error) {
-      console.error("🚨 X3DH Bob Error:", error);
+      console.error("🚨 Bob Sync Error:", error);
       return null;
     }
   }

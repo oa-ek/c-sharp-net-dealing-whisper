@@ -79,26 +79,22 @@ const handleCreateChat = async (targetUser: any) => {
   try {
     const serverChat = await agent.Chats.create(targetUser.id, targetUser.username);
     const serverChatId = serverChat.id.toString();
-
     const deviceIds = targetUser.activeDeviceIds || [];
-    
+
     for (const deviceId of deviceIds) {
       const { systemContent } = await EncryptionService.initializeChat(serverChatId, targetUser.id, deviceId);
       
       await ChatSocketService.sendMessage({
         chatId: serverChatId,
         ciphertext: systemContent,
-        wrappedKey: "system_handshake",
+        wrappedKey: "handshake_v1",
         attachments: []
       });
     }
 
-    setSearchQuery("");
-    setSearchResults([]);
     await refreshChats();
-    
-  } catch (err: any) {
-    console.error("🚨 Помилка створення чату:", err);
+  } catch (err) {
+    console.error("Create Chat Error:", err);
   } finally {
     setIsCreating(false);
   }
