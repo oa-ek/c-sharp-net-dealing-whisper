@@ -33,7 +33,7 @@ export const SignUp = () => {
     <div className="w-full max-w-md mx-auto">
       <form onSubmit={handleSignUp} className="flex flex-col gap-4 w-full">
         {error && (
-          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold text-center animate-in fade-in zoom-in-95">
+          <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-xs font-bold text-center animate-in fade-in zoom-in-95">
             {error}
           </div>
         )}
@@ -47,7 +47,7 @@ export const SignUp = () => {
         />
 
         <AuthInput 
-          label="Email" 
+          label="Email Address" 
           type="email" 
           placeholder="your@email.com"
           required 
@@ -56,7 +56,7 @@ export const SignUp = () => {
         />
 
         <AuthInput 
-          label="Password" 
+          label="Secure Password" 
           type="password" 
           placeholder="••••••••"
           required 
@@ -66,20 +66,20 @@ export const SignUp = () => {
         
         <button 
           disabled={loading} 
-          className="w-full py-4 mt-2 bg-emerald-600 text-white font-black rounded-xl hover:bg-emerald-500 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20"
+          className="w-full py-4 mt-2 bg-linear-[135deg] from-[#64B59D] via-[#348F96] to-[#2D6BA3] text-white font-black rounded-xl hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-200/50 uppercase tracking-wider"
         >
           {loading ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              <span>GENERATING SECURE IDENTITY...</span>
+              <span>Initializing...</span>
             </>
           ) : (
-            "INITIALIZE PROTOCOL"
+            "Initialize Protocol"
           )}
         </button>
 
-        <p className="text-zinc-500 text-[10px] text-center uppercase tracking-widest font-medium mt-2">
-          By initializing, you generate a unique E2EE identity bundle
+        <p className="text-gray-400 text-[10px] text-center uppercase tracking-widest font-medium mt-2 leading-relaxed px-4">
+          By initializing, you generate a unique E2EE identity bundle secured by Whisper
         </p>
       </form>
     </div>

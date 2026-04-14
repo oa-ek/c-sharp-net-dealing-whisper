@@ -26,9 +26,10 @@ interface SidebarProps {
   chats: any[];
   onSelectChat: (id: string) => void;
   refreshChats: () => Promise<void>;
+  activeChatId?: string; 
 }
 
-export const ChatSidebar = ({ chats, onSelectChat, refreshChats }: SidebarProps) => {
+export const ChatSidebar = ({ chats, onSelectChat, refreshChats, activeChatId }: SidebarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -53,88 +54,94 @@ export const ChatSidebar = ({ chats, onSelectChat, refreshChats }: SidebarProps)
     }
   };
 
-const handleLogoutFinal = async () => {
-  try {
-    await agent.Auth.logout().catch(() => {});
-
-    if (shouldWipe) {
-      await wipeLocalData();
-    } else {
-      await clearAuthData();
+  const handleLogoutFinal = async () => {
+    try {
+      await agent.Auth.logout().catch(() => {});
+      if (shouldWipe) {
+        await wipeLocalData();
+      } else {
+        await clearAuthData();
+      }
+      await ChatSocketService.stopConnection();
+      localStorage.clear();
+      window.location.replace("/auth/login"); 
+    } catch (err) {
+      window.location.replace("/auth/login");
     }
+  };
 
-    await ChatSocketService.stopConnection();
+  const handleCreateChat = async (targetUser: any) => {
+    setIsCreating(true);
+    try {
+      const serverChat = await agent.Chats.create(targetUser.id, targetUser.username);
+      const serverChatId = serverChat.id.toString();
+      const deviceIds = targetUser.activeDeviceIds || [];
 
-    localStorage.clear();
+      for (const deviceId of deviceIds) {
+        const { systemContent } = await EncryptionService.initializeChat(serverChatId, targetUser.id, deviceId);
+        
+        await ChatSocketService.sendMessage({
+          chatId: serverChatId,
+          ciphertext: systemContent,
+          wrappedKey: "handshake_v1",
+          attachments: []
+        });
+      }
 
-    window.location.replace("/auth/login"); 
-
-  } catch (err) {
-    window.location.replace("/auth/login");
-  }
-};
-
-const handleCreateChat = async (targetUser: any) => {
-  setIsCreating(true);
-  try {
-    const serverChat = await agent.Chats.create(targetUser.id, targetUser.username);
-    const serverChatId = serverChat.id.toString();
-    const deviceIds = targetUser.activeDeviceIds || [];
-
-    for (const deviceId of deviceIds) {
-      const { systemContent } = await EncryptionService.initializeChat(serverChatId, targetUser.id, deviceId);
-      
-      await ChatSocketService.sendMessage({
-        chatId: serverChatId,
-        ciphertext: systemContent,
-        wrappedKey: "handshake_v1",
-        attachments: []
-      });
+      await refreshChats();
+      setSearchResults([]);
+      setSearchQuery("");
+    } catch (err) {
+      console.error("Create Chat Error:", err);
+    } finally {
+      setIsCreating(false);
     }
+  };
 
-    await refreshChats();
-  } catch (err) {
-    console.error("Create Chat Error:", err);
-  } finally {
-    setIsCreating(false);
-  }
-};
   return (
-    <div className="w-80 h-full border-r border-zinc-800 flex flex-col bg-[#141414] relative">
-      <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-[#141414]">
+    <div className="w-80 h-full border-r border-gray-200 flex flex-col bg-white relative">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <img src={logo} alt="Whisper" className="w-8 h-8" />
-          <span className="text-white font-bold tracking-tight text-lg">Whisper</span>
+          <span className="text-[#111] font-black tracking-tighter text-xl bg-gradient-to-r from-[#64B59D] via-[#348F96] to-[#2D6BA3] bg-clip-text text-transparent">
+            Whisper
+          </span>
         </div>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-zinc-800 focus-visible:ring-0">
-              <Avatar className="w-8 h-8 border border-zinc-700">
-                <AvatarFallback className="bg-zinc-900 text-[10px] text-zinc-400">ME</AvatarFallback>
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100 focus-visible:ring-0 transition-colors">
+              <Avatar className="w-8 h-8 border border-gray-200 shadow-sm">
+                <AvatarFallback className="bg-gray-50 text-[10px] text-gray-500 font-bold">ME</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-[#1a1a1a] border-zinc-800 text-zinc-300 shadow-2xl">
-            <DropdownMenuLabel className="text-zinc-500 font-normal">Мій акаунт</DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-zinc-800" />
-            <DropdownMenuItem className="hover:!bg-zinc-800 cursor-pointer py-2 focus:bg-zinc-800">
-              <User className="mr-2 h-4 w-4 text-emerald-500" /> Профіль
+          <DropdownMenuContent align="end" className="w-56 bg-white border-gray-200 text-gray-700 shadow-2xl rounded-2xl p-1 animate-in zoom-in-95">
+            <DropdownMenuLabel className="text-gray-400 font-bold text-[10px] uppercase tracking-widest px-3 py-2">Мій акаунт</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-gray-100" />
+            <DropdownMenuItem className="hover:bg-gray-50 cursor-pointer py-2.5 px-3 rounded-xl focus:bg-gray-50 transition-colors">
+              <User className="mr-2 h-4 w-4 text-[#348F96]" /> Профіль
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIsSettingsOpen(true)} className="hover:!bg-zinc-800 cursor-pointer py-2 focus:bg-zinc-800">
-              <Settings className="mr-2 h-4 w-4 text-zinc-400" /> Налаштування
+            <DropdownMenuItem onClick={() => setIsSettingsOpen(true)} className="hover:bg-gray-50 cursor-pointer py-2.5 px-3 rounded-xl focus:bg-gray-50 transition-colors">
+              <Settings className="mr-2 h-4 w-4 text-gray-400" /> Налаштування
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-zinc-800" />
-            <DropdownMenuItem onClick={() => setIsLogoutOpen(true)} className="hover:!bg-zinc-800 !text-red-400 cursor-pointer py-2 focus:bg-zinc-800">
+            <DropdownMenuSeparator className="bg-gray-100" />
+            <DropdownMenuItem onClick={() => setIsLogoutOpen(true)} className="hover:bg-red-50 !text-red-600 cursor-pointer py-2.5 px-3 rounded-xl focus:bg-red-50 transition-colors">
               <LogOut className="mr-2 h-4 w-4" /> Вийти
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      <div className="p-4 bg-[#141414] relative z-50">
+      {/* Search Section */}
+      <div className="p-4 relative z-40">
         <div className="relative group">
-          {isSearching ? <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500 animate-spin" /> : <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 transition-colors" />}
+          {isSearching ? (
+            <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#348F96] animate-spin" />
+          ) : (
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 transition-colors group-focus-within:text-[#348F96]" />
+          )}
           <Input 
             value={searchQuery}
             onChange={(e) => {
@@ -142,28 +149,28 @@ const handleCreateChat = async (targetUser: any) => {
               if (e.target.value === "") setSearchResults([]);
             }}
             onKeyDown={handleSearch}
-            placeholder="Знайти юзера (Enter)..." 
-            className="pl-9 bg-zinc-900/50 border-zinc-800 text-zinc-200 placeholder:text-zinc-600 h-9 transition-all"
+            placeholder="Знайти юзера..." 
+            className="pl-9 bg-gray-50 border-gray-200 text-[#111] placeholder:text-gray-400 h-10 rounded-xl focus-visible:ring-2 focus-visible:ring-[#348F96]/20 transition-all border-none shadow-inner"
           />
         </div>
 
         {searchResults.length > 0 && (
-          <div className="absolute left-4 right-4 mt-2 bg-[#1a1a1a] border border-zinc-800 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="absolute left-4 right-4 mt-2 bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[100]">
             <ScrollArea className="max-h-[280px]">
               <div className="p-1">
                 {searchResults.map((user) => (
                   <div 
                     key={user.id} 
                     onClick={() => !isCreating && handleCreateChat(user)}
-                    className="p-3 flex items-center justify-between rounded-lg hover:bg-emerald-500/10 cursor-pointer group"
+                    className="p-3 flex items-center justify-between rounded-xl hover:bg-gray-50 cursor-pointer group transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <Avatar className="w-9 h-9 border border-zinc-800">
-                        <AvatarFallback className="bg-zinc-800 text-xs text-zinc-400">{user.username[0].toUpperCase()}</AvatarFallback>
+                      <Avatar className="w-9 h-9 border border-gray-100">
+                        <AvatarFallback className="bg-gray-100 text-xs text-gray-500 font-bold">{user.username[0].toUpperCase()}</AvatarFallback>
                       </Avatar>
-                      <span className="text-sm text-zinc-200 font-medium group-hover:text-emerald-400 transition-colors">{user.username}</span>
+                      <span className="text-sm text-gray-700 font-bold group-hover:text-[#2D6BA3] transition-colors">{user.username}</span>
                     </div>
-                    <UserPlus className="w-4 h-4 text-zinc-600 group-hover:text-emerald-500 transition-colors" />
+                    <UserPlus className="w-4 h-4 text-gray-400 group-hover:text-[#348F96] transition-all" />
                   </div>
                 ))}
               </div>
@@ -173,38 +180,54 @@ const handleCreateChat = async (targetUser: any) => {
       </div>
 
       <div className="px-4 mb-2 flex items-center justify-between">
-        <span className="text-[10px] uppercase font-bold text-zinc-600 tracking-widest px-2">Повідомлення</span>
-        <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-500 hover:text-emerald-500 hover:bg-transparent">
+        <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest px-2">Повідомлення</span>
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-400 hover:text-[#348F96] hover:bg-transparent transition-colors">
             <MessageSquarePlus className="w-4 h-4" />
         </Button>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="px-2 pb-2 space-y-1">
-          {chats.map((chat) => (
-            <div 
-              key={chat.id} 
-              onClick={() => onSelectChat(chat.id)}
-              className="p-3 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-zinc-900/80 transition-all border border-transparent hover:border-zinc-800 group"
-            >
-              <Avatar className="border border-zinc-800 w-11 h-11">
-                <AvatarFallback className="bg-zinc-800 text-zinc-400 uppercase">
-                  {chat.name ? chat.name[0] : "?"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-zinc-300 group-hover:text-white truncate transition-colors">{chat.name}</p>
-                <p className="text-xs text-zinc-500 truncate">Відкрити листування</p>
+      {/* Chat List */}
+      <ScrollArea className="flex-1 px-2">
+        <div className="space-y-1.5 pb-4">
+          {chats.map((chat) => {
+            const isActive = activeChatId === chat.id;
+            return (
+              <div 
+                key={chat.id} 
+                onClick={() => onSelectChat(chat.id)}
+                className={`p-3 rounded-2xl flex items-center gap-3 cursor-pointer transition-all border relative overflow-hidden group ${
+                  isActive 
+                    ? "bg-linear-[135deg] from-[#64B59D] via-[#348F96] to-[#2D6BA3] border-transparent shadow-lg shadow-blue-900/10 scale-[1.01]" 
+                    : "hover:bg-gray-50 border-transparent hover:border-gray-100"
+                }`}
+              >
+                <Avatar className={`w-11 h-11 border transition-colors ${isActive ? "border-white/30" : "border-gray-200"}`}>
+                  <AvatarFallback className={`uppercase font-bold transition-colors ${isActive ? "bg-white/20 text-white" : "bg-gray-100 text-gray-400"}`}>
+                    {chat.name ? chat.name[0] : "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-bold truncate transition-colors ${isActive ? "text-white" : "text-gray-900"}`}>
+                    {chat.name}
+                  </p>
+                  <p className={`text-[11px] font-medium truncate transition-colors ${isActive ? "text-white/80" : "text-gray-400"}`}>
+                    {/* E2EE Secure Session */}
+                  </p>
+                </div>
+                {isActive && (
+                   <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-white animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </ScrollArea>
 
-      <div className="p-3 border-t border-zinc-900 bg-[#121212] flex items-center justify-center">
+      {/* Footer Branding */}
+      <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex flex-col items-center gap-1">
         <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[10px] text-zinc-500 font-medium tracking-widest uppercase">Whisper Secure E2EE</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-[#64B59D] animate-pulse shadow-[0_0_8px_#64B59D]" />
+          <span className="text-[9px] text-gray-400 font-black uppercase tracking-[0.25em]">SAFE INTERNET IS HERE</span>
         </div>
       </div>
 
@@ -213,38 +236,41 @@ const handleCreateChat = async (targetUser: any) => {
         onClose={() => setIsSettingsOpen(false)} 
       />
 
+      {/* Logout Modal */}
       {isLogoutOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-sm bg-[#1a1a1a] border border-zinc-800 rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex items-center gap-3 mb-4 text-red-500">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+          <div className="w-full max-w-sm bg-white border border-gray-100 rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 mb-4 text-[#2D6BA3]">
                 <ShieldAlert className="w-6 h-6" />
-                <h3 className="text-xl font-bold text-white uppercase tracking-tighter">Завершити сесію?</h3>
+                <h3 className="text-xl font-black text-[#111] uppercase tracking-tighter">Завершити сесію?</h3>
             </div>
-            <p className="text-sm text-zinc-400 mb-6 leading-relaxed italic">Ви впевнені, що хочете вийти з облікового запису?</p>
+            <p className="text-sm text-gray-500 mb-6 leading-relaxed italic">Ви впевнені, що хочете вийти з облікового запису?</p>
 
             <div 
               onClick={() => setShouldWipe(!shouldWipe)}
-              className="flex items-center gap-3 p-3 mb-6 rounded-xl bg-zinc-900/50 border border-zinc-800 cursor-pointer hover:bg-zinc-800/50 transition-all group"
+              className="flex items-center gap-3 p-4 mb-6 rounded-2xl bg-gray-50 border border-gray-100 cursor-pointer hover:bg-gray-100 transition-all group"
             >
-              <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all duration-200 ${shouldWipe ? 'bg-red-500 border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]' : 'border-zinc-700'}`}>
+              <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all duration-200 ${
+                shouldWipe ? 'bg-[#2D6BA3] border-[#2D6BA3] shadow-sm' : 'border-gray-300 bg-white'
+              }`}>
                 {shouldWipe && <div className="w-2 h-2 bg-white rounded-full animate-in zoom-in-50" />}
               </div>
               <div className="flex flex-col text-left">
-                <span className="text-xs font-semibold text-zinc-200">Очистити локальний кеш</span>
-                <span className="text-[10px] text-zinc-500 italic">Стерти всі повідомлення та девайс ID</span>
+                <span className="text-xs font-bold text-gray-700">Очистити локальний кеш</span>
+                <span className="text-[10px] text-gray-400">Стерти ключі та історію</span>
               </div>
             </div>
 
             <div className="flex gap-3">
               <Button 
                 variant="ghost" 
-                className="flex-1 bg-zinc-900 text-zinc-300 border border-zinc-800"
+                className="flex-1 bg-gray-100 text-gray-600 border border-transparent hover:bg-gray-200 rounded-xl transition-all"
                 onClick={() => setIsLogoutOpen(false)}
               >
                 Скасувати
               </Button>
               <Button 
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                className="flex-1 bg-gradient-to-r from-[#64B59D] via-[#348F96] to-[#2D6BA3] text-white font-bold border-none shadow-lg hover:opacity-90 rounded-xl transition-all active:scale-95"
                 onClick={handleLogoutFinal}
               >
                 Вийти

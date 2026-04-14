@@ -61,7 +61,16 @@ class ChatSocketService {
             await this.connection?.invoke("TypingStop", chatId);
         }
     }
-
+    public async markAsRead(messageId: string) {
+        if (this.isConnected()) {
+            await this.connection?.invoke("MessageRead", messageId); 
+        }
+    }
+    public async confirmDelivery(messageId: string) {
+        if (this.isConnected()) {
+            await this.connection?.invoke("MessageDeliver", messageId);
+        }
+    }
 
 public onMessageNew(callback: (message: any) => void) {
   this.connection?.on("message-new", async (message: any) => {
@@ -75,6 +84,14 @@ public onMessageNew(callback: (message: any) => void) {
   });
 }
 
+    public onMessageRead(callback: (updatedMessage: any) => void) {
+        this.connection?.on("message-read", callback);
+    }
+
+    public onMessageDelivered(callback: (updatedMessage: any) => void) {
+        this.connection?.on("message-delivered", callback);
+    }
+
     public onTypingStarted(callback: (userId: string) => void) {
         this.connection?.on("typing-start", callback);
     }
@@ -87,6 +104,7 @@ public onMessageNew(callback: (message: any) => void) {
         if (this.connection) {
             this.connection.off("message-new");
             this.connection.off("typing-start");
+            this.connection.off("message-read");
             this.connection.off("typing-stop");
         }
     }
