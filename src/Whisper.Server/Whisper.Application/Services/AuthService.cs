@@ -1,4 +1,5 @@
 ﻿using Whisper.Application.DTOs.AuthDTOs;
+using Whisper.Application.DTOs.EmailDTOs;
 using Whisper.Application.Interfaces.Repositories;
 using Whisper.Application.Interfaces.Services;
 using Whisper.Domain.Entities;
@@ -11,17 +12,20 @@ namespace Whisper.Application.Services
         private readonly IUserDeviceRepository _deviceRepository;
         private readonly ITokenService _tokenService;
         private readonly IPasswordService _passwordService;
+        private IEmailService _emailService;
 
         public AuthService(
             IUserRepository userRepository,
             IUserDeviceRepository deviceRepository,
             ITokenService tokenService,
-            IPasswordService passwordService)
+            IPasswordService passwordService,
+            IEmailService emailService)
         {
             _userRepository = userRepository;
             _deviceRepository = deviceRepository;
             _tokenService = tokenService;
             _passwordService = passwordService;
+            _emailService = emailService;
         }
 
         public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
@@ -174,6 +178,58 @@ namespace Whisper.Application.Services
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null) return false;
             return _passwordService.VerifyPassword(password, user.PasswordHash);
+        }
+        public async Task<bool> SendPasswordResetCodeAsync(string email)
+        {
+            var user = await _userRepository.GetByEmailAsync(email);
+            if (user == null) return false; 
+
+            var code = Random.Shared.Next(100000, 999999).ToString();
+
+            user.PasswordResetCode = code;
+            user.ResetCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
+
+            await _userRepository.UpdateAsync(user);
+            await _userRepository.SaveAsync();
+
+            await _emailService.SendEmailAsync(new SendEmailDto
+            {
+                ToEmail = user.Email,
+                Subject = "Whisper: Відновлення пароля",
+                HtmlBody = $@"
+                <div style='font-family: sans-serif; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
+                    <h2 style='color: #2D6BA3;'>Відновлення пароля</h2>
+                    <p>Твій код підтвердження для Whisper:</p>
+                    <div style='background: #f3f4f6; padding: 15px; font-size: 24px; font-weight: bold; text-align: center; letter-spacing: 5px;'>
+                        {code}
+                    </div>
+                    <p style='color: #6b7280; font-size: 12px; margin-top: 20px;'>Код дійсний протягом 15 хвилин.</p>
+                </div>"
+            });
+
+            return true;
+        }
+
+        public async Task<bool> ResetPasswordWithCodeAsync(ResetPasswordDto dto)
+        {
+            var user = await _userRepository.GetByEmailAsync(dto.Email);
+
+            if (user == null ||
+                user.PasswordResetCode != dto.Code ||
+                user.ResetCodeExpiresAt < DateTime.UtcNow)
+            {
+                return false;
+            }
+
+            user.PasswordHash = _passwordService.HashPassword(dto.NewPassword);
+
+            user.PasswordResetCode = null;
+            user.ResetCodeExpiresAt = null;
+
+            await _userRepository.UpdateAsync(user);
+            await _userRepository.SaveAsync();
+
+            return true;
         }
     }
 }

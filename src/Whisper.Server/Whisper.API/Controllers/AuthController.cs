@@ -91,5 +91,22 @@ namespace Whisper.Server.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            // Завжди повертаємо Ok, щоб не видавати існування емейлів у базі
+            await _authService.SendPasswordResetCodeAsync(dto.Email);
+            return Ok(new { message = "Якщо такий емейл існує, код відправлено." });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            var result = await _authService.ResetPasswordWithCodeAsync(dto);
+            if (!result)
+                return BadRequest(new { message = "Невірний код або термін дії коду вичерпано." });
+
+            return Ok(new { message = "Пароль успішно змінено." });
+        }
     }
 }
