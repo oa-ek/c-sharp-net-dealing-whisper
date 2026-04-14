@@ -58,7 +58,7 @@ export const UserProfile = ({ isOpen, onClose }: { isOpen: boolean, onClose: () 
 
     return (
         <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm p-8'>
-            <div className='w-full max-w-3xl  rounded-xl bg-linear-[75deg] from-teal-300 to-sky-500 overflow-hidden p-[3px]'>
+            <div className='w-full max-w-3xl rounded-xl bg-linear-[135deg] from-[#64B59D] via-[#348F96] to-[#2D6BA3] overflow-hidden p-[3px]'>
                 <div className='bg-white rounded-lg p-2'>
                     <div className='flex items-center gap-3 p-2'>
                         <div className='rounded-full p-1 bg-linear-'>
