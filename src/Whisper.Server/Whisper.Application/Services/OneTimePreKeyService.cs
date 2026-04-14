@@ -15,7 +15,7 @@ namespace Whisper.Application.Services
             _userDeviceRepository = userDeviceRepository;
         }
 
-        public async Task<BundleDto> GetBundleAsync(string userId, string deviceId)
+        public async Task<BundleDto> GetBundleAsync(string deviceId)
         {
             Guid deviceGuid = Guid.Parse(deviceId);
 
@@ -50,7 +50,7 @@ namespace Whisper.Application.Services
             var userDevice = await _userDeviceRepository.GetByIdAsync(deviceGuid);
             if (userDevice == null)
                 throw new Exception("UserDevice does not exist!");
-            if (userDevice.UserId.ToString() == userId)
+            if (userDevice.UserId.ToString() != userId)
                 throw new Exception("User doesn't own UserDevice!");
 
             var oneTimePreKeys = keys
@@ -75,7 +75,7 @@ namespace Whisper.Application.Services
             var userDevice = await _userDeviceRepository.GetByIdAsync(deviceGuid);
             if (userDevice == null)
                 throw new Exception("UserDevice does not exist!");
-            if (userDevice.UserId.ToString() == userId)
+            if (userDevice.UserId.ToString() != userId)
                 throw new Exception("User doesn't own UserDevice!");
 
             return new BundleStatusDto()

@@ -74,8 +74,10 @@ export const ChatWindow = ({
       <div className="flex-1 min-h-0 relative">
         <ScrollArea ref={scrollRef} className="h-full w-full">
           <div className="p-6 space-y-4 max-w-3xl mx-auto">
-            {messages.map((msg: any) => {
-              const isMine = msg.senderId === currentUserId;
+            {messages
+              .filter(msg => !msg.ciphertext.startsWith("#InitCode"))
+              .map((msg: any) => {
+                const isMine = msg.senderId === currentUserId;
 
               return (
                 <div 

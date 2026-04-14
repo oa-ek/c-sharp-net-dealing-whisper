@@ -3,7 +3,7 @@ import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { getAuthTokenFromDB, clearAuthData } from "./db";
 
 const agent = axios.create({
-    baseURL: "http://26.205.72.169:5055",
+    baseURL: "https://26.205.72.169:7055",
 });
 
 agent.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
@@ -12,7 +12,7 @@ agent.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
         
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-            console.log(`📡 [Axios Send] ${config.method?.toUpperCase()} -> ${config.url}`);
+            console.log(`[Axios Send] ${config.method?.toUpperCase()} -> ${config.url}`);
         } else {
             console.warn(" [Axios Warning] Токен не знайдено!");
         }
@@ -73,6 +73,17 @@ const Users = {
     deleteDevice: (deviceId: string) => requests.delete(`/api/v1/Users/devices/${deviceId}`),
 };
 
-const agentService = { Chats, Users, Auth };
+const Keys = {
+    getBundle: (deviceId: string) => 
+        requests.get<any>(`/api/v1/Keys/bundle/${deviceId}`),
+    
+    postBundle: (deviceId: string, keys: string[]) => 
+        requests.post(`/api/v1/Keys/bundle/${deviceId}`, keys),
+    
+    getStatus: (deviceId: string) => 
+        requests.get<any>(`/api/v1/Keys/status/${deviceId}`),
+};
+
+const agentService = { Chats, Users, Auth, Keys };
 
 export default agentService;

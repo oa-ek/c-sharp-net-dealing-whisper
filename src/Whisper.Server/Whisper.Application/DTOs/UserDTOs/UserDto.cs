@@ -12,5 +12,6 @@ namespace Whisper.Application.DTOs.UserDTOs
         public string? PfpLink { get; set; }
         public string? Bio { get; set; }
         public DateTime LastSeen { get; set; }
+        public List<string> ActiveDeviceIds { get; set; } = new();
     }
 }
