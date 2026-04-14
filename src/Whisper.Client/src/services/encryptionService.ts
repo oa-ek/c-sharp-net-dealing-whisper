@@ -11,6 +11,24 @@ const debugDH = (name: string, value: Uint8Array) => {
 };
 
 export const EncryptionService = {
+  async encryptMessage(plainText: string, sharedKeyB64: string) {
+    const wrapKey = CryptoService.generateRandomKeyB64();
+    const ciphertext = await CryptoService.encryptAES(plainText, wrapKey);
+    const wrappedKey = await CryptoService.encryptAES(wrapKey, sharedKeyB64);
+
+    return { ciphertext, wrappedKey };
+  },
+
+  async decryptMessage(ciphertext: string, wrappedKey: string, sharedKeyB64: string): Promise<string> {
+    try {
+      const wrapKey = await CryptoService.decryptAES(wrappedKey, sharedKeyB64);
+      return await CryptoService.decryptAES(ciphertext, wrapKey);
+    } catch (e) {
+      console.error("❌ Decryption error:", e);
+      return "🔒 Помилка дешифрування";
+    }
+  },
+
   async initializeChat(serverChatId: string, recipientId: string, recipientDeviceId: string) {
     try {
       const bundle = await agent.Keys.getBundle(recipientDeviceId);
@@ -18,8 +36,6 @@ export const EncryptionService = {
       if (!myAuth) throw new Error("Сесія не ініціалізована");
 
       const ephemeral = CryptoService.generateOneTimePreKeys(1)[0];
-
-      // Використовуємо нашу математичну конвертацію
       const aliceIdentityPrivX = await CryptoService.edPrivToX(myAuth.identity.privateKey);
       const bobIdentityPubX = CryptoService.edPubToX(bundle.publicIdentityKey);
 
@@ -41,12 +57,8 @@ export const EncryptionService = {
       const currentAuth = await db.auth.toCollection().first();
       if (currentAuth) {
         const newSession: ChatSession = {
-          chatId: serverChatId,
-          chatName: '',
-          sharedKey: masterKeyB64,
-          status: 'encrypted',
-          lastMessageAt: new Date(),
-          membersId: [recipientId]
+          chatId: serverChatId, chatName: '', sharedKey: masterKeyB64,
+          status: 'encrypted', lastMessageAt: new Date(), membersId: [recipientId]
         };
         await db.auth.put({
           ...currentAuth,
@@ -54,37 +66,27 @@ export const EncryptionService = {
         });
       }
 
-      const systemContent = `${INIT_TAG}|${myAuth.identity.publicKey}|${ephemeral.publicKey}|${bundle.oneTimePreKey || 'none'}|${END_TAG}`;
-      return { systemContent };
-    } catch (error) {
-      console.error("🚨 Alice Handshake Error:", error);
-      throw error;
-    }
+      return { systemContent: `${INIT_TAG}|${myAuth.identity.publicKey}|${ephemeral.publicKey}|${bundle.oneTimePreKey || 'none'}|${END_TAG}` };
+    } catch (error) { throw error; }
   },
 
   async initializeReceiverSide(serverChatId: string, messageContent: string) {
     try {
       const parts = messageContent.split('|');
-      const aliceIdentityKey = parts[1];
-      const aliceEphemeralKey = parts[2];
-      const usedPreKeyPub = parts[3] === 'none' ? undefined : parts[3];    
-
       const myAuth = await db.auth.toCollection().first();
       if (!myAuth) throw new Error("Сесія не ініціалізована");
 
-      const aliceIdentityPubX = CryptoService.edPubToX(aliceIdentityKey);
+      const aliceIdentityPubX = CryptoService.edPubToX(parts[1]);
       const bobIdentityPrivX = await CryptoService.edPrivToX(myAuth.identity.privateKey);
 
       const dh1 = CryptoService.calculateDH(myAuth.signedPreKey.privateKey, aliceIdentityPubX);
-      const dh2 = CryptoService.calculateDH(bobIdentityPrivX, aliceEphemeralKey);
-      const dh3 = CryptoService.calculateDH(myAuth.signedPreKey.privateKey, aliceEphemeralKey);
+      const dh2 = CryptoService.calculateDH(bobIdentityPrivX, parts[2]);
+      const dh3 = CryptoService.calculateDH(myAuth.signedPreKey.privateKey, parts[2]);
       
       let dh4 = new Uint8Array(32).fill(0);
-      if (usedPreKeyPub) {
-        const opk = myAuth.oneTimePreKeys.find(k => k.publicKey === usedPreKeyPub);
-        if (opk) {
-          dh4 = CryptoService.calculateDH(opk.privateKey, aliceEphemeralKey);
-        }
+      if (parts[3] !== 'none') {
+        const opk = myAuth.oneTimePreKeys.find(k => k.publicKey === parts[3]);
+        if (opk) dh4 = CryptoService.calculateDH(opk.privateKey, parts[2]);
       }
 
       debugDH("DH1", dh1);
@@ -98,23 +100,15 @@ export const EncryptionService = {
       const currentAuth = await db.auth.toCollection().first();
       if (currentAuth) {
         const newSession: ChatSession = {
-          chatId: serverChatId,
-          chatName: '',
-          sharedKey: masterKeyB64,
-          status: 'encrypted',
-          lastMessageAt: new Date(),
-          membersId: []
+          chatId: serverChatId, chatName: '', sharedKey: masterKeyB64, status: 'encrypted',
+          lastMessageAt: new Date(), membersId: []
         };
         await db.auth.put({
           ...currentAuth,
           chats: [...(currentAuth.chats || []).filter(c => c.chatId !== serverChatId), newSession]
         });
-        console.log("✅ Боб успішно зберіг sharedKey:", masterKeyB64);
       }
       return masterKeyB64;
-    } catch (error) {
-      console.error("🚨 Bob Sync Error:", error);
-      return null;
-    }
+    } catch (error) { return null; }
   }
 };

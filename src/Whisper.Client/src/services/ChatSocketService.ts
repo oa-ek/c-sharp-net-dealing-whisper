@@ -1,8 +1,6 @@
 import * as signalR from "@microsoft/signalr";
-import type { MessageCreateDto, MessageDto, ReactionCreateDto } from "../types/chat";
-import { db } from "../api/db";
+import type { MessageCreateDto, ReactionCreateDto } from "../types/chat";
 import { EncryptionService } from "./encryptionService";
-import type { ChatSession } from "../types/db";
 
 class ChatSocketService {
     private connection: signalR.HubConnection | null = null;
