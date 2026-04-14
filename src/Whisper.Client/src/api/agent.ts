@@ -12,7 +12,7 @@ agent.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
         
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-            console.log(`📡 [Axios Send] ${config.method?.toUpperCase()} -> ${config.url}`);
+            console.log(`[Axios Send] ${config.method?.toUpperCase()} -> ${config.url}`);
         } else {
             console.warn(" [Axios Warning] Токен не знайдено!");
         }
@@ -73,6 +73,17 @@ const Users = {
     deleteDevice: (deviceId: string) => requests.delete(`/api/v1/Users/devices/${deviceId}`),
 };
 
-const agentService = { Chats, Users, Auth };
+const Keys = {
+    getBundle: (userId: string, deviceId: string) => 
+        requests.get<any>(`/api/v1/Keys/bundle/${userId}/${deviceId}`),
+    
+    postBundle: (deviceId: string, keys: string[]) => 
+        requests.post(`/api/v1/Keys/bundle/${deviceId}`, keys),
+    
+    getStatus: (deviceId: string) => 
+        requests.get<any>(`/api/v1/Keys/status/${deviceId}`),
+};
+
+const agentService = { Chats, Users, Auth, Keys };
 
 export default agentService;

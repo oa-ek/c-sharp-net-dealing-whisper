@@ -12,6 +12,8 @@
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.8",
     "@microsoft/signalr": "^10.0.0",
+    "@noble/curves": "^2.2.0",
+    "@scure/base": "^2.0.0",
     "@tailwindcss/vite": "^4.2.2",
     "axios": "^1.13.6",
     "class-variance-authority": "^0.7.1",

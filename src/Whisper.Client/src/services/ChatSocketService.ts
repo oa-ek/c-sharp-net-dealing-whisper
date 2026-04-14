@@ -1,5 +1,8 @@
 import * as signalR from "@microsoft/signalr";
 import type { MessageCreateDto, MessageDto, ReactionCreateDto } from "../types/chat";
+import { db } from "../api/db";
+import { EncryptionService } from "./encryptionService";
+import type { ChatSession } from "../types/db";
 
 class ChatSocketService {
     private connection: signalR.HubConnection | null = null;
@@ -23,7 +26,7 @@ class ChatSocketService {
         }
     }
 
-    private isConnected(): boolean {
+    public isConnected(): boolean {
         return this.connection?.state === signalR.HubConnectionState.Connected;
     }
 
@@ -62,8 +65,23 @@ class ChatSocketService {
     }
 
 
-    public onMessageNew(callback: (message: MessageDto) => void) {
-        this.connection?.on("message-new", callback);
+    public onMessageNew(callback: (message: any) => void) {
+        this.connection?.on("message-new", async (message: any) => {
+        const auth = await db.auth.toCollection().first();
+        const sessionExists = auth?.chats?.some(c => c.chatId === message.chatId);
+
+        if (!sessionExists && message.aliceIdentityKey && message.aliceEphemeralKey) {
+            await EncryptionService.initializeReceiverSide(
+            message.chatId,
+            message.aliceIdentityKey,
+            message.aliceEphemeralKey,
+            message.usedPreKeyId
+            );
+            
+        }
+
+        callback(message);
+        });
     }
 
     public onTypingStarted(callback: (userId: string) => void) {

@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
+import { EncryptionService } from "../../../services/encryptionService";
 import { 
   Search, Settings, LogOut, User, UserPlus, 
   Loader2, MessageSquarePlus, ShieldAlert 
@@ -73,20 +74,34 @@ const handleLogoutFinal = async () => {
   }
 };
 
-  const handleCreateChat = async (targetUser: any) => {
-    setIsCreating(true);
-    try {
-      await agent.Chats.create(targetUser.id, targetUser.username);
-      setSearchQuery("");
-      setSearchResults([]);
-      await refreshChats();
-    } catch (err: any) {
-      alert("Не вдалося створити чат.");
-    } finally {
-      setIsCreating(false);
-    }
-  };
+const handleCreateChat = async (targetUser: any) => {
+  console.log("🖱 Клік по юзеру:", targetUser.username);
+  setIsCreating(true);
+  
+  try {
+    const serverChat = await agent.Chats.create(targetUser.id, targetUser.username);
 
+    const serverChatId = serverChat.id.toString();
+    const deviceIds = targetUser.activeDeviceIds || [];
+    
+
+    if (deviceIds.length === 0) {
+      return;
+    }
+
+    for (const deviceId of deviceIds) {
+      await EncryptionService.initializeChat(serverChatId, targetUser.id, deviceId);
+    }
+
+    setSearchQuery("");
+    setSearchResults([]);
+    await refreshChats();
+    
+  } catch (err: any) {
+  } finally {
+    setIsCreating(false);
+  }
+};
   return (
     <div className="w-80 h-full border-r border-zinc-800 flex flex-col bg-[#141414] relative">
       <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-[#141414]">

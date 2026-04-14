@@ -17,19 +17,20 @@ namespace Whisper.API.Controllers
             _oneTimePreKeyService = oneTimePreKeyService;
         }
 
-        [HttpGet("/bundle/{deviceId}")]
-        public async Task<IActionResult> GetBundle(string deviceId)
+        [HttpGet("bundle/{targetUserId}/{deviceId}")]
+        public async Task<IActionResult> GetBundle(string targetUserId, string deviceId)
         {
-            return Ok(await _oneTimePreKeyService.GetBundleAsync(UserId, deviceId));
+            //return Ok(await _oneTimePreKeyService.GetBundleAsync(UserId, deviceId));
+            return Ok(await _oneTimePreKeyService.GetBundleAsync(targetUserId.ToString(), deviceId));
         }
 
-        [HttpPost("/bundle/{deviceId}")]
+        [HttpPost("bundle/{deviceId}")]
         public async Task<IActionResult> PostBundle(string deviceId, [FromBody] IEnumerable<string> publicKeys)
         {
             return Ok(await _oneTimePreKeyService.AddKeysAsync(UserId, deviceId, publicKeys));
         }
 
-        [HttpGet("/status/{deviceId}")]
+        [HttpGet("status/{deviceId}")]
         public async Task<IActionResult> GetStatus(string deviceId)
         {
             return Ok(await _oneTimePreKeyService.GetCountAsync(UserId, deviceId));

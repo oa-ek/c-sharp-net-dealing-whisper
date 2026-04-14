@@ -28,8 +28,13 @@ public class UserService : IUserService
 
     public async Task<IEnumerable<UserDto>> SearchUsersAsync(string username)
     {
-        var users = await (await _repository.GetAll())
-            .Where(u => u.Username.Contains(username)).ToListAsync();
+        var query = await _repository.GetAll();
+
+        var users = await query
+            .Include(u => u.Devices)
+            .Where(u => u.Username.Contains(username))
+            .ToListAsync();
+
         return _mapper.Map<IEnumerable<UserDto>>(users);
     }
 }
