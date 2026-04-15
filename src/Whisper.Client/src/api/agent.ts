@@ -67,6 +67,7 @@ const Chats = {
         }),
     sendMessage: (body: any) => 
         requests.post<any>("/api/v1/Chats/messages", body),
+    getMembers: (chatId: string) => requests.get<string[]>(`/api/v1/Chats/${chatId}/get-members`),
 };
 
 const Users = {
