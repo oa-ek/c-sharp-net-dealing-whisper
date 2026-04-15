@@ -102,10 +102,12 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactApp", policy =>
     {
         policy.WithOrigins(
-                "http://localhost:5173", 
                 "https://localhost:5173",
-                "http://26.205.72.169:5173", 
-                "https://26.205.72.169:5173"
+                "http://localhost:5173",
+                "https://whisper.switzerlandnorth.cloudapp.azure.com",
+                "http://whisper.switzerlandnorth.cloudapp.azure.com",
+                "https://51.103.209.177:5173",
+                "http://51.103.209.177"
               )
               .AllowAnyHeader()
               .AllowAnyMethod()

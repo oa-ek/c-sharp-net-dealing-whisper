@@ -24,8 +24,8 @@ export const EncryptionService = {
       const wrapKey = await CryptoService.decryptAES(wrappedKey, sharedKeyB64);
       return await CryptoService.decryptAES(ciphertext, wrapKey);
     } catch (e) {
-      console.error("❌ Decryption error:", e);
-      return "🔒 Помилка дешифрування";
+      console.error("Decryption error:", e);
+      return "Помилка дешифрування";
     }
   },
 
