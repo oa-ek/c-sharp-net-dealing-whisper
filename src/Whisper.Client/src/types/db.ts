@@ -9,17 +9,19 @@ export interface SignedKeyPair extends KeyPair {
 
 export interface AuthEntity {
   deviceId: string; 
-  token: string;
+  token: string | null;
   identity: KeyPair;
   signedPreKey: SignedKeyPair;
   oneTimePreKeys: KeyPair[];
-  chats: ChatEntity[];
+  chats: ChatSession[];  
   id?: number; 
 }
 
-export interface ChatEntity {
+export interface ChatSession {
   chatId: string; 
   chatName: string;
-  conversationKey: string;
-  memberId: string; 
+  sharedKey: string;        
+  status: 'encrypted' | 'pending';
+  lastMessageAt?: Date;
+  membersId: string[]; 
 }

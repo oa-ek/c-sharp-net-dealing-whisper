@@ -10,6 +10,7 @@ using Whisper.API.Controllers;
 using Whisper.Application.Interfaces.Repositories;
 using Whisper.Application.Interfaces.Services;
 using Whisper.Application.Services;
+using Whisper.Application.Common.Config;
 using Whisper.Persistence.Context;
 using Whisper.Persistence.Repositories;
 
@@ -45,6 +46,7 @@ builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 //// Add services to the container.
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserDeviceService, UserDeviceService>();
@@ -91,6 +93,9 @@ builder.Services.AddAuthentication(options =>
         }
     };
 });
+
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Smtp"));
+builder.Services.AddTransient<IEmailService, EmailService>();
 
 builder.Services.AddCors(options =>
 {

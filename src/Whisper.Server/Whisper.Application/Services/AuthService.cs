@@ -1,8 +1,8 @@
 ﻿using Whisper.Application.DTOs.AuthDTOs;
+using Whisper.Application.DTOs.EmailDTOs;
 using Whisper.Application.Interfaces.Repositories;
 using Whisper.Application.Interfaces.Services;
 using Whisper.Domain.Entities;
-using BC = BCrypt.Net.BCrypt;
 
 namespace Whisper.Application.Services
 {
@@ -11,18 +11,23 @@ namespace Whisper.Application.Services
         private readonly IUserRepository _userRepository;
         private readonly IUserDeviceRepository _deviceRepository;
         private readonly ITokenService _tokenService;
+        private readonly IPasswordService _passwordService;
+        private IEmailService _emailService;
 
         public AuthService(
             IUserRepository userRepository,
             IUserDeviceRepository deviceRepository,
-            ITokenService tokenService)
+            ITokenService tokenService,
+            IPasswordService passwordService,
+            IEmailService emailService)
         {
             _userRepository = userRepository;
             _deviceRepository = deviceRepository;
             _tokenService = tokenService;
+            _passwordService = passwordService;
+            _emailService = emailService;
         }
 
-        // --- РЕЄСТРАЦІЯ ---
         public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
         {
             var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
@@ -34,7 +39,7 @@ namespace Whisper.Application.Services
                 Id = Guid.NewGuid(),
                 Username = dto.Username,
                 Email = dto.Email,
-                PasswordHash = BC.HashPassword(dto.Password),
+                PasswordHash = _passwordService.HashPassword(dto.Password),
                 CreatedAt = DateTime.UtcNow,
                 LastSeen = DateTime.UtcNow,
                 ETwoFactorSecret = Guid.NewGuid().ToString()
@@ -58,7 +63,7 @@ namespace Whisper.Application.Services
             {
                 foreach (var key in dto.OneTimePreKeys)
                 {
-                    device.OneTimePreKeys.Add(new OneTimePreKey { PublicKey= key });
+                    device.OneTimePreKeys.Add(new OneTimePreKey { PublicKey = key });
                 }
             }
 
@@ -79,10 +84,11 @@ namespace Whisper.Application.Services
         public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
         {
             var user = await _userRepository.GetByEmailAsync(dto.Email);
-            if (user == null || !BC.Verify(dto.Password, user.PasswordHash))
+
+            if (user == null || !_passwordService.VerifyPassword(dto.Password, user.PasswordHash))
                 throw new Exception("Incorrect email or password");
 
-            var device = await _deviceRepository.GetByDeviceIdAsync(dto.DeviceId);
+            var device = await _deviceRepository.GetByIdAsync(dto.DeviceId);
             if (device == null)
                 throw new Exception("Device not recognized. Device registration required.");
 
@@ -109,7 +115,7 @@ namespace Whisper.Application.Services
                 throw new Exception("Invalid token");
 
             var deviceId = Guid.Parse(deviceIdClaim);
-            var device = await _deviceRepository.GetByDeviceIdAsync(deviceId);
+            var device = await _deviceRepository.GetByIdAsync(deviceId);
 
             if (device == null || device.RefreshToken != refreshToken || device.TokenExpiresAt <= DateTime.UtcNow)
                 throw new Exception("The session is out of date or invalid.");
@@ -130,22 +136,99 @@ namespace Whisper.Application.Services
             };
         }
 
-        public async Task<bool> VerifyCurrentPasswordAsync(Guid userId, string password)
-        {
-            var user = await _userRepository.GetByIdAsync(userId);
-            if (user == null) return false;
-
-            return BC.Verify(password, user.PasswordHash);
-        }
-
         public async Task<bool> ChangePasswordAsync(Guid userId, string newPassword)
         {
             var user = await _userRepository.GetByIdAsync(userId);
             if (user == null) return false;
 
-            user.PasswordHash = BC.HashPassword(newPassword);
+            user.PasswordHash = _passwordService.HashPassword(newPassword);
             await _userRepository.UpdateAsync(user);
             await _userRepository.SaveAsync();
+
+            return true;
+        }
+        public async Task<bool> LogoutAsync(Guid deviceId)
+        {
+            var device = await _deviceRepository.GetByIdAsync(deviceId);
+            if (device == null) return false;
+
+            device.RefreshToken = null;
+            device.TokenExpiresAt = DateTime.MinValue;
+
+            await _deviceRepository.SaveAsync();
+            return true;
+        }
+
+        public async Task<bool> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return false;
+
+            if (!_passwordService.VerifyPassword(currentPassword, user.PasswordHash))
+                return false;
+
+            user.PasswordHash = _passwordService.HashPassword(newPassword);
+
+            await _userRepository.SaveAsync();
+            return true;
+        }
+
+        public async Task<bool> VerifyCurrentPasswordAsync(Guid userId, string password)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return false;
+            return _passwordService.VerifyPassword(password, user.PasswordHash);
+        }
+        public async Task<bool> SendPasswordResetCodeAsync(string email)
+        {
+            var user = await _userRepository.GetByEmailAsync(email);
+            if (user == null) return false; 
+
+            var code = Random.Shared.Next(100000, 999999).ToString();
+
+            user.PasswordResetCode = code;
+            user.ResetCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
+
+            await _userRepository.UpdateAsync(user);
+            await _userRepository.SaveAsync();
+
+            await _emailService.SendEmailAsync(new SendEmailDto
+            {
+                ToEmail = user.Email,
+                Subject = "Whisper: Відновлення пароля",
+                HtmlBody = $@"
+                <div style='font-family: sans-serif; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;'>
+                    <h2 style='color: #2D6BA3;'>Відновлення пароля</h2>
+                    <p>Твій код підтвердження для Whisper:</p>
+                    <div style='background: #f3f4f6; padding: 15px; font-size: 24px; font-weight: bold; text-align: center; letter-spacing: 5px;'>
+                        {code}
+                    </div>
+                    <p style='color: #6b7280; font-size: 12px; margin-top: 20px;'>Код дійсний протягом 15 хвилин.</p>
+                </div>"
+            });
+
+            return true;
+        }
+
+        public async Task<bool> ResetPasswordWithCodeAsync(ResetPasswordDto dto)
+        {
+            var user = await _userRepository.GetByEmailAsync(dto.Email);
+
+            if (user == null ||
+                user.PasswordResetCode != dto.Code ||
+                user.ResetCodeExpiresAt < DateTime.UtcNow)
+            {
+                return false;
+            }
+
+            user.PasswordHash = _passwordService.HashPassword(dto.NewPassword);
+
+            user.PasswordResetCode = null;
+            user.ResetCodeExpiresAt = null;
+
+            await _userRepository.UpdateAsync(user);
+            await _userRepository.SaveAsync();
+
             return true;
         }
     }

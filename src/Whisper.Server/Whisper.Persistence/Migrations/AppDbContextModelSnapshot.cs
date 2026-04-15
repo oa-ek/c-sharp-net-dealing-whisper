@@ -118,8 +118,14 @@ namespace Whisper.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("PasswordResetCode")
+                        .HasColumnType("text");
+
                     b.Property<string>("PfpLink")
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("ResetCodeExpiresAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Username")
                         .IsRequired()

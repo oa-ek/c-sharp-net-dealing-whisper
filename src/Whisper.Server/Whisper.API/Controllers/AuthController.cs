@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using Whisper.Application.DTOs.AuthDTOs;
 using Whisper.Application.Interfaces.Services;
 
@@ -47,6 +49,33 @@ namespace Whisper.Server.Controllers
                 return Unauthorized(new { message = ex.Message });
             }
         }
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var deviceIdClaim = User.FindFirst("deviceId")?.Value;
+            if (string.IsNullOrEmpty(deviceIdClaim)) return BadRequest();
+
+            await _authService.LogoutAsync(Guid.Parse(deviceIdClaim));
+            return Ok();
+        }
+
+        [Authorize]
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized();
+
+            var result = await _authService.ChangePasswordAsync(
+                Guid.Parse(userIdClaim),
+                dto.CurrentPassword,
+                dto.NewPassword
+            );
+
+            if (!result) return BadRequest(new { message = "Невірний старий пароль" });
+            return Ok();
+        }
 
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh([FromHeader(Name = "Authorization")] string authHeader, [FromBody] string refreshToken)
@@ -61,6 +90,23 @@ namespace Whisper.Server.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            // Завжди повертаємо Ok, щоб не видавати існування емейлів у базі
+            await _authService.SendPasswordResetCodeAsync(dto.Email);
+            return Ok(new { message = "Якщо такий емейл існує, код відправлено." });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            var result = await _authService.ResetPasswordWithCodeAsync(dto);
+            if (!result)
+                return BadRequest(new { message = "Невірний код або термін дії коду вичерпано." });
+
+            return Ok(new { message = "Пароль успішно змінено." });
         }
     }
 }
