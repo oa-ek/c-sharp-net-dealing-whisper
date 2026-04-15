@@ -59,7 +59,7 @@ export const UserProfile = ({ isOpen, onClose }: { isOpen: boolean, onClose: () 
     return (
         <div className='fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm p-8'>
             <div className='w-full max-w-3xl rounded-xl bg-linear-[135deg] from-[#64B59D] via-[#348F96] to-[#2D6BA3] overflow-hidden p-[3px]'>
-                <div className='bg-white rounded-lg p-2'>
+                <div className='bg-white rounded-lg p-4'>
                     <div className='flex items-center gap-3 p-2'>
                         <div className='rounded-full p-1 bg-linear-'>
                             <Avatar className="w-42 h-42">
@@ -71,7 +71,7 @@ export const UserProfile = ({ isOpen, onClose }: { isOpen: boolean, onClose: () 
                                 <Input type="text" className='border-0 font-bold' style={{ fontSize: '22px'}}
                                     value={user?.displayName}
                                     onChange={e => setUser(prev => prev ? {...user, displayName: e.target.value} as UserDto : prev)}/>
-                                <a onClick={handleClose} className='text-2xl font-bold'>✕</a>    
+                                <a onClick={handleClose} className='text-2xl font-bold cursor-pointer hover:text-zink-600'>✕</a>    
                             </div>
                             <p className='ml-2 text-sm'>@{user?.username}</p>
                             <p className='ml-2 test-xl mt-3 font-bold'>Bio:</p>

@@ -4,6 +4,7 @@ import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 import chatSocketService from "../../../services/ChatSocketService";
+import { EmojiModal } from "./EmojiModal";
 
 interface ChatWindowProps {
   activeChatId?: string;
@@ -14,6 +15,14 @@ interface ChatWindowProps {
   currentUserId: string | null;
   isPartnerTyping: boolean; 
 }
+
+const mediaFileExtensions = [
+  '.gif', 
+  '.png',
+  '.jpg',
+  'jpeg',
+  'webp',
+]
 
 export const ChatWindow = ({ 
   activeChatId, 
@@ -27,6 +36,7 @@ export const ChatWindow = ({
   const [inputText, setInputText] = useState("");
   const [isLocalTyping, setIsLocalTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false);
 
   useEffect(() => {
     if (!activeChatId || !inputText.trim()) {
@@ -126,9 +136,19 @@ export const ChatWindow = ({
                         ? "bg-linear-[135deg] from-[#64B59D] via-[#348F96] to-[#2D6BA3] text-white rounded-tr-none font-medium shadow-blue-900/5" 
                         : "bg-white border border-gray-100 text-[#222] rounded-tl-none"
                     }`}>
-                      <p className="leading-relaxed whitespace-pre-wrap break-words">
+                      <div>
+                        {
+                      mediaFileExtensions.some(e => msg.ciphertext.endsWith(e)) ? ( 
+                      <img src={msg.ciphertext} className="max-w-md h-auto"/>
+                       ) : (
+                       <p className="leading-relaxed whitespace-pre-wrap break-words">
                         {msg.ciphertext}
                       </p>
+                       )
+                      }
+                      </div>
+
+                      
                       <div className={`text-[9px] mt-1.5 font-bold uppercase tracking-tighter text-right opacity-60 ${isMine ? "text-white" : "text-gray-400"}`}>
                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
@@ -164,8 +184,19 @@ export const ChatWindow = ({
             className="border-none bg-transparent focus-visible:ring-0 text-[#111] placeholder:text-gray-400 font-medium" 
             placeholder="Напишіть повідомлення..." 
           />
-          <Button variant="ghost" size="icon" className="text-gray-400 hover:text-[#348F96] rounded-xl transition-colors">
-            <Smile className="w-5 h-5" />
+          <Button onClick={() => setIsEmojiModalOpen(!isEmojiModalOpen)} variant="ghost" size="icon" className="text-gray-400 hover:text-[#348F96] rounded-xl transition-colors">
+            <div className="relative">
+              <Smile className="w-5 h-5" />
+              <div className="absolute bottom-10 -left-[124px]">
+                <EmojiModal 
+                isOpen={isEmojiModalOpen}
+                onSelect={(emoji: String) => {
+                  setIsEmojiModalOpen(false);
+                  setInputText(inputText + emoji);
+                }} 
+                />
+              </div>
+            </div>
           </Button>
           <Button 
             onClick={handleSend}
