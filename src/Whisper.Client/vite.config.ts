@@ -1,5 +1,5 @@
 import path from "path"
-import { defineConfig, loadEnv } from 'vite' // Додаємо loadEnv
+import { defineConfig, loadEnv } from 'vite' 
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import tailwindcss from "@tailwindcss/vite"
@@ -25,12 +25,12 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       proxy: {
         '/api': {
-          target: env.VITE_API_URL || 'https://localhost:7055',
+          target: env.VITE_API_URL || 'https://25.41.224.185:7055',
           changeOrigin: true,
           secure: false,
         },
         '/ws': {
-          target: env.VITE_API_URL || 'https://localhost:7055',
+          target: env.VITE_API_URL || 'https://25.41.224.185:7055',
           ws: true,
           secure: false,
         },

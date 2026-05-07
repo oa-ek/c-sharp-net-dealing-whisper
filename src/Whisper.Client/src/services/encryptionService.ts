@@ -73,6 +73,7 @@ export const EncryptionService = {
   async initializeReceiverSide(serverChatId: string, messageContent: string) {
     try {
       const parts = messageContent.split('|');
+      console.log(messageContent);
       const myAuth = await db.auth.toCollection().first();
       if (!myAuth) throw new Error("Сесія не ініціалізована");
 

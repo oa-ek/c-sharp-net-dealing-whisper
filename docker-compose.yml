@@ -1,62 +1,33 @@
 services:
-  backend:
-    build: 
-      context: ./src/Whisper.Server
-      dockerfile: Dockerfile
-    container_name: whisper-backend
-    restart: always
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:5055
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=whisper_identity_db;Username=admin;Password=whisper
-      - MongoSettings__Connection=mongodb://admin:whisper@mongodb:27017
-    ports:
-      - "7055:7055"
-      - "5055:5055"
-    depends_on:
-      - postgres
-      - mongodb
-
-  frontend:
-    build: 
-      context: ./src/Whisper.Client
-      dockerfile: Dockerfile
-    container_name: whisper-frontend
-    restart: always
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-
   postgres:
     image: postgres:16-alpine
     container_name: whisper-postgres
-    restart: always
+    restart: no
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: whisper
       POSTGRES_DB: whisper_identity_db
-    deploy:
-      resources:
-        limits:
-          memory: 256M
+    ports:
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
   mongodb:
-    image: mongo:latest
+    image: mongo:7.0
     container_name: whisper-mongodb
-    restart: always
+    restart: no
+    mem_limit: 1024m 
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: whisper
-    deploy:
-      resources:
-        limits:
-          memory: 512M 
+    ports:
+      - "27017:27017"
+    ulimits:
+      nofile:
+        soft: 64000
+        hard: 64000
     volumes:
-      - mongodata:/data/db
+      - ./mongo-data:/data/db:Z
 
 volumes:
   pgdata:
-  mongodata:

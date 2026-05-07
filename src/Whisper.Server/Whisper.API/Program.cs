@@ -102,16 +102,19 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactApp", policy =>
     {
         policy.WithOrigins(
-                "https://localhost:5173",
-                "http://localhost:5173",
-                "https://whisper.switzerlandnorth.cloudapp.azure.com",
-                "http://whisper.switzerlandnorth.cloudapp.azure.com",
-                "https://51.103.209.177:5173",
-                "http://51.103.209.177"
-              )
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials(); 
+                // "https://localhost:5173",
+                // "http://localhost:5173",
+                // "https://whisper.switzerlandnorth.cloudapp.azure.com",
+                // "http://whisper.switzerlandnorth.cloudapp.azure.com",
+                // "https://51.103.209.177:5173",
+                // "http://51.103.209.177",
+                // "http://25.41.224.185:5173",
+                // "https://25.41.224.185:5173",
+                "https://25.41.224.185:5173"
+                )
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials(); 
     });
 });
 
@@ -175,7 +178,7 @@ if (app.Environment.IsDevelopment())
 }
 app.UseCors("AllowReactApp");
 
-//app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 app.UseAuthentication();
 
