@@ -13,6 +13,7 @@ using Whisper.Application.Services;
 using Whisper.Application.Common.Config;
 using Whisper.Persistence.Context;
 using Whisper.Persistence.Repositories;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -94,8 +95,20 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Email Service
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Smtp"));
 builder.Services.AddTransient<IEmailService, EmailService>();
+
+// Emoji Api Service
+builder.Services.Configure<EmojiApiSettings>(builder.Configuration.GetSection("EmojiApi"));
+builder.Services.AddHttpClient<IEmojiService, EmojiService>((serviceProvider, client) =>
+{
+    var options = serviceProvider
+        .GetRequiredService<IOptions<EmojiApiSettings>>()
+        .Value;
+    client.BaseAddress = new Uri(options.BaseLink);
+}).AddStandardResilienceHandler();
+
 
 builder.Services.AddCors(options =>
 {

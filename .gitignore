@@ -421,3 +421,5 @@ FodyWeavers.xsd
 appsettings.json
 
 mongo-data
+
+.env*
