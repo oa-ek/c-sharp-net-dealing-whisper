@@ -4,7 +4,7 @@ import { getAuthTokenFromDB, clearAuthData } from "./db";
 import type { UpdateUserDto, UserDto } from "../types/user";
 
 const agent = axios.create({
-    baseURL: "https://26.205.72.169:7055",
+    baseURL: import.meta.env.VITE_API_URL,
 });
 
 agent.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {

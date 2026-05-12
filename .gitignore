@@ -419,3 +419,5 @@ FodyWeavers.xsd
 
 # other files to ignore
 appsettings.json
+
+mongo-data

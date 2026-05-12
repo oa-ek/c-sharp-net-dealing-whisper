@@ -28,8 +28,10 @@ namespace Whisper.Persistence.Repositories
         public async Task<IEnumerable<Message>> GetLimitedAsync(string chatId, int limit, int offset)
         {
             return await _collection.Find(m => m.ChatId.ToString() == chatId)
+                .SortByDescending(m => m.CreatedAt)
                 .Skip(offset)
                 .Limit(limit)
+                .SortBy(m => m.CreatedAt)
                 .ToListAsync();
         }
     }
