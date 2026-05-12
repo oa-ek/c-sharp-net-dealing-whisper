@@ -56,6 +56,18 @@ builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IReactionService, ReactionService>();
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
+builder.Services.AddMemoryCache();
+
+
+builder.Services.AddHttpClient<IBinlistService, BinlistService>(client =>
+{
+    var baseUrl = builder.Configuration["ExternalApis:Binlist"] 
+                    ?? "https://lookup.binlist.net/";
+    
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(10); 
+})
+.AddStandardResilienceHandler(); 
 
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT Key is missing!");
@@ -174,8 +186,8 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference(options =>
     {
         options.WithTitle("Whisper API")
-               .WithTheme(ScalarTheme.Moon)
-               .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+                .WithTheme(ScalarTheme.Moon)
+                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
     });
 }
 app.UseCors("AllowReactApp");
@@ -191,4 +203,3 @@ app.MapControllers();
 app.MapHub<WSChatController>("ws/v1/chat");
 
 app.Run();
-
