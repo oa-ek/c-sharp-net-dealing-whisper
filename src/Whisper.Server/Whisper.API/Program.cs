@@ -110,7 +110,9 @@ builder.Services.AddCors(options =>
                 // "http://51.103.209.177",
                 // "http://25.41.224.185:5173",
                 // "https://25.41.224.185:5173",
-                "https://25.41.224.185:5173"
+                "https://25.41.224.185:5173",
+                "https://100.101.70.10:5173",
+                "https://fedora.tailfdec14.ts.net:5173"
                 )
                 .AllowAnyHeader()
                 .AllowAnyMethod()
