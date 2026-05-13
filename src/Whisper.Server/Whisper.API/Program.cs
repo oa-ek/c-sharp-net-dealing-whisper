@@ -56,6 +56,8 @@ builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IReactionService, ReactionService>();
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
+builder.Services.AddSingleton<IOnlineTracker, OnlineTracker>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddMemoryCache();
 
 
