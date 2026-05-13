@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import agent from "../../../api/agent";
 import type { BinlistResponseDto } from "../../../types/binlist";
-import { Loader2, CreditCard, Copy, X, Check } from "lucide-react";
+import { Loader2, CreditCard, Copy, X, Check, AlertCircle } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 
 interface CardPreviewProps {
@@ -14,6 +14,7 @@ export const CardPreview = ({ cardNumber }: CardPreviewProps) => {
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
+    const [error, setError] = useState(false);
     
     const [coords, setCoords] = useState({ top: 0, left: 0 });
     
@@ -46,12 +47,13 @@ export const CardPreview = ({ cardNumber }: CardPreviewProps) => {
             return;
         }
 
-        if (data) {
+        if (data || error) {
             setIsOpen(true);
             return;
         }
 
         setLoading(true);
+        setError(false);
         try {
             const bin = cardNumber.replace(/\D/g, "").substring(0, 6);
             const res = await agent.Enrichment.getCardData(bin);
@@ -59,6 +61,8 @@ export const CardPreview = ({ cardNumber }: CardPreviewProps) => {
             setIsOpen(true);
         } catch (err) {
             console.error("Enrichment error", err);
+            setError(true); 
+            setIsOpen(true); 
         } finally {
             setLoading(false);
         }
@@ -83,27 +87,30 @@ export const CardPreview = ({ cardNumber }: CardPreviewProps) => {
                 {loading && <Loader2 className="ml-1 w-3.5 h-3.5 animate-spin" />}
             </button>
 
-            {isOpen && data && createPortal(
+            {isOpen && (data || error) && createPortal(
                 <div 
                     ref={cardRef}
                     className="fixed z-[9999] w-72 p-5 rounded-2xl border border-white/40 shadow-2xl backdrop-blur-2xl bg-white/90 text-slate-900 animate-in zoom-in-95 fade-in duration-200"
                     style={{ 
-
                         top: `${coords.top - 20}px`,
                         left: `${coords.left}px`,
                         transform: 'translateY(-100%)' 
                     }}
                 >
-                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#64B59D]/10 rounded-full blur-3xl" />
+                    <div className={`absolute -top-10 -right-10 w-32 h-32 ${error ? 'bg-red-500/10' : 'bg-[#64B59D]/10'} rounded-full blur-3xl`} />
 
                     <div className="relative z-10 flex flex-col gap-4 text-left">
                         <div className="flex justify-between items-start">
                             <div className="flex flex-col">
                                 <span className="text-lg font-black tracking-tight text-slate-900">
-                                    {data.bank?.name || "Unknown Bank"}
+                                    {error ? "Service Offline" : (data?.bank?.name || "Unknown Bank")}
                                 </span>
-                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">
-                                    {data.scheme} • {data.type}
+                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                                    {error ? (
+                                        <><AlertCircle className="w-3 h-3 text-red-500" /> API Unavailable</>
+                                    ) : (
+                                        `${data?.scheme} • ${data?.type}`
+                                    )}
                                 </span>
                             </div>
                             <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-slate-100 rounded-md text-slate-400">
@@ -128,18 +135,26 @@ export const CardPreview = ({ cardNumber }: CardPreviewProps) => {
                             </Button>
                         </div>
 
-                        <div className="flex justify-between items-end pt-2 border-t border-slate-100">
-                            <div className="flex flex-col gap-1">
-                                <span className="text-[9px] uppercase font-bold text-slate-400">Issuer Info</span>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs font-medium text-slate-600">{data.country?.name}</span>
-                                    <span className="text-[10px] font-black px-1.5 py-0.5 bg-[#348F96]/10 text-[#348F96] rounded">
-                                        {data.brand || "Standard"}
-                                    </span>
-                                </div>
+                        {error ? (
+                            <div className="pt-2 border-t border-slate-100">
+                                <p className="text-[10px] leading-relaxed text-slate-400 font-medium">
+                                    Дані від Binlist недоступні. Перевірте з'єднання або спробуйте пізніше.
+                                </p>
                             </div>
-                            <span className="text-3xl leading-none ml-1 mb-1">{data.country?.emoji}</span>
-                        </div>
+                        ) : (
+                            <div className="flex justify-between items-end pt-2 border-t border-slate-100">
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-[9px] uppercase font-bold text-slate-400">Issuer Info</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs font-medium text-slate-600">{data?.country?.name}</span>
+                                        <span className="text-[10px] font-black px-1.5 py-0.5 bg-[#348F96]/10 text-[#348F96] rounded uppercase">
+                                            {data?.brand || "Standard"}
+                                        </span>
+                                    </div>
+                                </div>
+                                <span className="text-3xl leading-none ml-1 mb-1 drop-shadow-sm">{data?.country?.emoji}</span>
+                            </div>
+                        )}
                     </div>
                 </div>,
                 document.body
