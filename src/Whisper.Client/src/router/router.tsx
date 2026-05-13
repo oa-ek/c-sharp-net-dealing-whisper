@@ -4,6 +4,7 @@ import LoginPage from '../pages/LoginPage';
 import SignUpPage from '../pages/SingUpPage';
 import ChatsPage from '../pages/ChatsPage'; 
 import ProtectedRoute from '../router/ProtectedRoute';
+import AdminPage from '../pages/AdminPage';
 
 export const router = createBrowserRouter([
   {
@@ -17,6 +18,10 @@ export const router = createBrowserRouter([
       { path: 'login', element: <LoginPage /> },
       { path: 'signup', element: <SignUpPage /> },
     ],
+  },
+  {
+        path: '/admin', 
+        element: <AdminPage />,
   },
   {
     element: <ProtectedRoute />,

@@ -97,6 +97,9 @@ const Keys = {
 const Enrichment = {
     getCardData: (bin: string) => requests.get<BinlistResponseDto>(`/api/v1/Binlist/card/${bin}`),
 };
-const agentService = { Chats, Users, Auth, Keys, Enrichment };
+const Admin = {
+    getDashboardData: () => requests.get<any>("/api/v1/Admin/dashboard"),
+};
+const agentService = { Chats, Users, Auth, Keys, Enrichment, Admin };
 
 export default agentService;
