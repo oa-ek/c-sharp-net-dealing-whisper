@@ -12,11 +12,13 @@ namespace Whisper.API.Controllers
     {
         private readonly IMessageService _messageService;
         private readonly IReactionService _reactionService;
+        private readonly IOnlineTracker _onlineTracker;
 
-        public WSChatController(IMessageService messageService, IReactionService reactionService)
+        public WSChatController(IMessageService messageService, IReactionService reactionService, IOnlineTracker onlineTracker)
         {
             _messageService = messageService;
             _reactionService = reactionService;
+            _onlineTracker = onlineTracker;
         }
 
         // Helper property to get UserId from Claims correctly
@@ -104,6 +106,22 @@ namespace Whisper.API.Controllers
         {
             if (string.IsNullOrEmpty(UserId)) throw new HubException("Unauthorized");
             await Clients.Group($"chat-{chatId}").SendAsync("typing-stop", UserId);
+        }
+        public override async Task OnConnectedAsync()
+        {
+            var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId != null)
+            {
+                _onlineTracker.TrackConnection(userId, Context.ConnectionId);
+                await Clients.Group("Admins").SendAsync("UpdateOnlineCount", _onlineTracker.GetOnlineCount());
+            }
+            await base.OnConnectedAsync();
+        }
+
+        public override async Task OnDisconnectedAsync(Exception? exception)
+        {
+            _onlineTracker.TrackDisconnection(Context.ConnectionId);
+            await base.OnDisconnectedAsync(exception);
         }
     }
 }
