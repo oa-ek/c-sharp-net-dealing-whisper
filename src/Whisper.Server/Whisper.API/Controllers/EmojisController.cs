@@ -17,14 +17,14 @@ namespace Whisper.API.Controllers
         [HttpGet("/")]
         public async Task<IActionResult> GetAll()
         {
-            try { return Ok(_emojiService.GetAll()); }
+            try { return Ok(await _emojiService.GetAll()); }
             catch { return StatusCode(500); } 
         }
 
         [HttpGet("/search")]
         public async Task<IActionResult> GetBySearch([FromQuery] string search)
         {
-            try { return Ok(_emojiService.GetBySearch(search)); }
+            try { return Ok(await _emojiService.GetBySearch(search)); }
             catch { return StatusCode(500); }
         }
     }

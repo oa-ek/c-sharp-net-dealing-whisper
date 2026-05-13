@@ -4,7 +4,7 @@ namespace Whisper.Application.Interfaces.Services
 {
     public interface IEmojiService
     {
-        public Task<IEnumerable<EmojiDto>> GetAll();
-        public Task<IEnumerable<EmojiDto>> GetBySearch(string query);
+        public Task<IEnumerable<EmojiDto>?> GetAll();
+        public Task<IEnumerable<EmojiDto>?> GetBySearch(string query);
     }
 }

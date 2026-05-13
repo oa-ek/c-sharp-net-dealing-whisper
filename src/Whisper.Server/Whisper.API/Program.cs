@@ -58,6 +58,8 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IReactionService, ReactionService>();
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
 
+builder.Services.AddMemoryCache();
+
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT Key is missing!");
 builder.Services.AddAuthentication(options =>
