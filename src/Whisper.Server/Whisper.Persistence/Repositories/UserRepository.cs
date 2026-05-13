@@ -20,5 +20,15 @@ namespace Whisper.Persistence.Repositories
             _dbSet.Update(user);
             await Task.CompletedTask;
         }
+        public async Task<int> GetCountAsync() => await _dbSet.CountAsync();
+
+        public async Task<IEnumerable<KeyValuePair<DateTime, int>>> GetRegistrationStatsAsync(DateTime since)
+        {
+            return await _dbSet
+                .Where(u => u.CreatedAt >= since)
+                .GroupBy(u => u.CreatedAt.Date)
+                .Select(g => new KeyValuePair<DateTime, int>(g.Key, g.Count()))
+                .ToListAsync();
+        }
     }
 }
