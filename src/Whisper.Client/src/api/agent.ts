@@ -2,6 +2,7 @@ import axios from "axios";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { getAuthTokenFromDB, clearAuthData } from "./db";
 import type { UpdateUserDto, UserDto } from "../types/user";
+import type { BinlistResponseDto } from "../types/binlist";
 
 const agent = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
@@ -93,7 +94,9 @@ const Keys = {
     getStatus: (deviceId: string) => 
         requests.get<any>(`/api/v1/Keys/status/${deviceId}`),
 };
-
-const agentService = { Chats, Users, Auth, Keys };
+const Enrichment = {
+    getCardData: (bin: string) => requests.get<BinlistResponseDto>(`/api/v1/Binlist/card/${bin}`),
+};
+const agentService = { Chats, Users, Auth, Keys, Enrichment };
 
 export default agentService;
