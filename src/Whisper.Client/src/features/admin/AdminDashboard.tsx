@@ -56,9 +56,6 @@ export const AdminDashboard = ({ data, lastUpdated }: AdminDashboardProps) => {
                 <div className="w-2 h-2 rounded-full bg-[#64B59D] animate-pulse" />
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Admin Live Control • 15s Sync</span>
             </div>
-            <h1 className="text-5xl font-black text-[#111] tracking-tighter uppercase italic leading-none">
-                Insights <span className="text-[#348F96]">Core</span>
-            </h1>
             </div>
             <div className="text-right">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Останнє оновлення</p>
