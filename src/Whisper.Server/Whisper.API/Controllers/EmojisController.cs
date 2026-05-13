@@ -4,7 +4,7 @@ using Whisper.Application.Interfaces.Services;
 
 namespace Whisper.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     [ApiController]
     public class EmojisController : ControllerBase
     {
@@ -14,17 +14,17 @@ namespace Whisper.API.Controllers
             _emojiService = emojiService;
         }
 
-        [HttpGet("/")]
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             try { return Ok(await _emojiService.GetAll()); }
             catch { return StatusCode(500); } 
         }
 
-        [HttpGet("/search")]
-        public async Task<IActionResult> GetBySearch([FromQuery] string search)
+        [HttpGet("search")]
+        public async Task<IActionResult> GetBySearch([FromQuery] string query)
         {
-            try { return Ok(await _emojiService.GetBySearch(search)); }
+            try { return Ok(await _emojiService.GetBySearch(query)); }
             catch { return StatusCode(500); }
         }
     }
