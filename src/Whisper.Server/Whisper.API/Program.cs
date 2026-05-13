@@ -13,6 +13,7 @@ using Whisper.Application.Services;
 using Whisper.Application.Common.Config;
 using Whisper.Persistence.Context;
 using Whisper.Persistence.Repositories;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +72,8 @@ builder.Services.AddHttpClient<IBinlistService, BinlistService>(client =>
 })
 .AddStandardResilienceHandler(); 
 
+builder.Services.AddMemoryCache();
+
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT Key is missing!");
 builder.Services.AddAuthentication(options =>
@@ -108,8 +111,20 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Email Service
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Smtp"));
 builder.Services.AddTransient<IEmailService, EmailService>();
+
+// Emoji Api Service
+builder.Services.Configure<EmojiApiSettings>(builder.Configuration.GetSection("EmojiApi"));
+builder.Services.AddHttpClient<IEmojiService, EmojiService>((serviceProvider, client) =>
+{
+    var options = serviceProvider
+        .GetRequiredService<IOptions<EmojiApiSettings>>()
+        .Value;
+    client.BaseAddress = new Uri(options.BaseLink);
+}).AddStandardResilienceHandler();
+
 
 builder.Services.AddCors(options =>
 {
@@ -126,7 +141,8 @@ builder.Services.AddCors(options =>
                 // "https://25.41.224.185:5173",
                 "https://25.41.224.185:5173",
                 "https://100.101.70.10:5173",
-                "https://fedora.tailfdec14.ts.net:5173"
+                "https://fedora.tailfdec14.ts.net:5173",
+                "https://localhost:5173"
                 )
                 .AllowAnyHeader()
                 .AllowAnyMethod()

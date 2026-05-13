@@ -202,7 +202,7 @@ export const ChatWindow = ({
           <Button onClick={() => setIsEmojiModalOpen(!isEmojiModalOpen)} variant="ghost" size="icon" className="text-gray-400 hover:text-[#348F96] rounded-xl transition-colors">
             <div className="relative">
               <Smile className="w-5 h-5" />
-              <div className="absolute bottom-10 -left-[124px]">
+              <div className="absolute bottom-10 -left-[448px]">
                 <EmojiModal 
                 isOpen={isEmojiModalOpen}
                 onSelect={(emoji: String) => {
