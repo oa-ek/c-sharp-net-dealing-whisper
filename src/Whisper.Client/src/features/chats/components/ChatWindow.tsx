@@ -5,6 +5,7 @@ import { Input } from "../../../components/ui/input";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 import chatSocketService from "../../../services/ChatSocketService";
 import { EmojiModal } from "./EmojiModal";
+import { CardPreview } from "./CardPreview";
 
 interface ChatWindowProps {
   activeChatId?: string;
@@ -23,6 +24,20 @@ const mediaFileExtensions = [
   'jpeg',
   'webp',
 ]
+const renderMessageWithCards = (text: string) => {
+  const cardRegex = /(\b\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}\b)/g;
+  
+  if (!text) return null;
+
+  const parts = text.split(cardRegex);
+  
+  return parts.map((part, index) => {
+    if (part.match(cardRegex)) {
+      return <CardPreview key={index} cardNumber={part} />;
+    }
+    return part;
+  });
+};
 
 export const ChatWindow = ({ 
   activeChatId, 
@@ -140,11 +155,11 @@ export const ChatWindow = ({
                         {
                       mediaFileExtensions.some(e => msg.ciphertext.endsWith(e)) ? ( 
                       <img src={msg.ciphertext} className="max-w-md h-auto"/>
-                       ) : (
-                       <p className="leading-relaxed whitespace-pre-wrap break-words">
-                        {msg.ciphertext}
+                        ) : (
+                        <p className="leading-relaxed whitespace-pre-wrap break-words">
+                        {renderMessageWithCards(msg.ciphertext)}
                       </p>
-                       )
+                        )
                       }
                       </div>
 
