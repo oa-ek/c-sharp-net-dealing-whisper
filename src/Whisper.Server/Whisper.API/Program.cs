@@ -14,8 +14,16 @@ using Whisper.Application.Common.Config;
 using Whisper.Persistence.Context;
 using Whisper.Persistence.Repositories;
 using Microsoft.Extensions.Options;
+using OpenTelemetry.Metrics;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddPrometheusExporter());
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnection")));
@@ -64,8 +72,7 @@ builder.Services.AddMemoryCache();
 
 builder.Services.AddHttpClient<IBinlistService, BinlistService>(client =>
 {
-    var baseUrl = builder.Configuration["ExternalApis:Binlist"] 
-                    ?? "https://lookup.binlist.net/";
+    var baseUrl = builder.Configuration["ExternalApis:Binlist"];
     
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromSeconds(10); 
@@ -196,6 +203,8 @@ builder.Services.AddSignalR(options =>
 });
 
 var app = builder.Build();
+
+app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
 if (app.Environment.IsDevelopment())
 {

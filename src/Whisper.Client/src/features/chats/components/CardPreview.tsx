@@ -17,6 +17,8 @@ export const CardPreview = ({ cardNumber }: CardPreviewProps) => {
     const [error, setError] = useState(false);
     
     const [coords, setCoords] = useState({ top: 0, left: 0 });
+
+    const [countryEmoji, setCountryEmoji] = useState<string>("?");
     
     const triggerRef = useRef<HTMLButtonElement>(null);
     const cardRef = useRef<HTMLDivElement>(null);
@@ -30,6 +32,8 @@ export const CardPreview = ({ cardNumber }: CardPreviewProps) => {
         if (isOpen) document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isOpen]);
+
+    
 
     const handleToggle = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -58,6 +62,7 @@ export const CardPreview = ({ cardNumber }: CardPreviewProps) => {
             const bin = cardNumber.replace(/\D/g, "").substring(0, 6);
             const res = await agent.Enrichment.getCardData(bin);
             setData(res);
+            setCountryEmoji(await getEmoji(res.country?.name));
             setIsOpen(true);
         } catch (err) {
             console.error("Enrichment error", err);
@@ -74,6 +79,17 @@ export const CardPreview = ({ cardNumber }: CardPreviewProps) => {
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
     };
+
+    const getEmoji = async (countryName: string | undefined) => {
+        if (!countryName) return "❓";
+        try {
+            const emoji = (await agent.Emojis.getBySearch(countryName))[0]?.character;
+            return emoji || "❓";
+        } catch {
+            return "❓";
+        }
+    };
+
 
     return (
         <span className="inline-block relative">
@@ -152,7 +168,8 @@ export const CardPreview = ({ cardNumber }: CardPreviewProps) => {
                                         </span>
                                     </div>
                                 </div>
-                                <span className="text-3xl leading-none ml-1 mb-1 drop-shadow-sm">{data?.country?.emoji}</span>
+                                {/* <span className="text-3xl leading-none ml-1 mb-1 drop-shadow-sm">{data?.country?.emoji}</span> */}
+                                <span className="text-3xl leading-none ml-1 mb-1 drop-shadow-sm">{countryEmoji}</span>
                             </div>
                         )}
                     </div>
