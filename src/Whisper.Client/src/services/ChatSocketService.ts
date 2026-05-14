@@ -8,8 +8,11 @@ class ChatSocketService {
     public async startConnection(token: string): Promise<void> {
         if (this.connection?.state === signalR.HubConnectionState.Connected) return;
 
+
+        const baseUrl = import.meta.env.VITE_API_URL;
+        
         this.connection = new signalR.HubConnectionBuilder()
-            .withUrl("https://26.205.72.169:7055/ws/v1/chat", {
+            .withUrl(`${baseUrl}/ws/v1/chat`, {
                 accessTokenFactory: () => token,
             })
             .withAutomaticReconnect() 

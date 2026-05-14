@@ -5,6 +5,7 @@ import { Input } from "../../../components/ui/input";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 import chatSocketService from "../../../services/ChatSocketService";
 import { EmojiModal } from "./EmojiModal";
+import { CardPreview } from "./CardPreview";
 
 interface ChatWindowProps {
   activeChatId?: string;
@@ -20,9 +21,23 @@ const mediaFileExtensions = [
   '.gif', 
   '.png',
   '.jpg',
-  'jpeg',
-  'webp',
+  '.jpeg',
+  '.webp',
 ]
+const renderMessageWithCards = (text: string) => {
+  const cardRegex = /(\b\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}\b)/g;
+  
+  if (!text) return null;
+
+  const parts = text.split(cardRegex);
+  
+  return parts.map((part, index) => {
+    if (part.match(cardRegex)) {
+      return <CardPreview key={index} cardNumber={part} />;
+    }
+    return part;
+  });
+};
 
 export const ChatWindow = ({ 
   activeChatId, 
@@ -36,7 +51,7 @@ export const ChatWindow = ({
   const [inputText, setInputText] = useState("");
   const [isLocalTyping, setIsLocalTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false);
+  const [isEmojiModalOpen, setIsEmojiModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (!activeChatId || !inputText.trim()) {
@@ -140,11 +155,11 @@ export const ChatWindow = ({
                         {
                       mediaFileExtensions.some(e => msg.ciphertext.endsWith(e)) ? ( 
                       <img src={msg.ciphertext} className="max-w-md h-auto"/>
-                       ) : (
-                       <p className="leading-relaxed whitespace-pre-wrap break-words">
-                        {msg.ciphertext}
+                        ) : (
+                        <p className="leading-relaxed whitespace-pre-wrap break-words">
+                        {renderMessageWithCards(msg.ciphertext)}
                       </p>
-                       )
+                        )
                       }
                       </div>
 
@@ -184,20 +199,21 @@ export const ChatWindow = ({
             className="border-none bg-transparent focus-visible:ring-0 text-[#111] placeholder:text-gray-400 font-medium" 
             placeholder="Напишіть повідомлення..." 
           />
-          <Button onClick={() => setIsEmojiModalOpen(!isEmojiModalOpen)} variant="ghost" size="icon" className="text-gray-400 hover:text-[#348F96] rounded-xl transition-colors">
-            <div className="relative">
-              <Smile className="w-5 h-5" />
-              <div className="absolute bottom-10 -left-[124px]">
+          <Button onClick={() => {setIsEmojiModalOpen(!isEmojiModalOpen)}} variant="ghost" size="icon" className="text-gray-400 hover:text-[#348F96] rounded-xl transition-colors">
+            <Smile className="w-5 h-5" />
+          </Button>
+          <div className="relative">
+              <div className="absolute bottom-10 -left-[448px]">
                 <EmojiModal 
                 isOpen={isEmojiModalOpen}
                 onSelect={(emoji: String) => {
                   setIsEmojiModalOpen(false);
                   setInputText(inputText + emoji);
+                  console.log("Must be closed")
                 }} 
                 />
               </div>
             </div>
-          </Button>
           <Button 
             onClick={handleSend}
             disabled={!inputText.trim()}

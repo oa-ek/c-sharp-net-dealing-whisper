@@ -13,8 +13,17 @@ using Whisper.Application.Services;
 using Whisper.Application.Common.Config;
 using Whisper.Persistence.Context;
 using Whisper.Persistence.Repositories;
+using Microsoft.Extensions.Options;
+using OpenTelemetry.Metrics;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddPrometheusExporter());
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnection")));
@@ -56,6 +65,21 @@ builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IReactionService, ReactionService>();
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
+builder.Services.AddSingleton<IOnlineTracker, OnlineTracker>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddMemoryCache();
+
+
+builder.Services.AddHttpClient<IBinlistService, BinlistService>(client =>
+{
+    var baseUrl = builder.Configuration["ExternalApis:Binlist"];
+    
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(10); 
+})
+.AddStandardResilienceHandler(); 
+
+builder.Services.AddMemoryCache();
 
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT Key is missing!");
@@ -94,22 +118,42 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Email Service
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Smtp"));
 builder.Services.AddTransient<IEmailService, EmailService>();
+
+// Emoji Api Service
+builder.Services.Configure<EmojiApiSettings>(builder.Configuration.GetSection("EmojiApi"));
+builder.Services.AddHttpClient<IEmojiService, EmojiService>((serviceProvider, client) =>
+{
+    var options = serviceProvider
+        .GetRequiredService<IOptions<EmojiApiSettings>>()
+        .Value;
+    client.BaseAddress = new Uri(options.BaseLink);
+}).AddStandardResilienceHandler();
+
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
         policy.WithOrigins(
-                "http://localhost:5173", 
-                "https://localhost:5173",
-                "http://26.205.72.169:5173", 
-                "https://26.205.72.169:5173"
-              )
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials(); 
+                // "https://localhost:5173",
+                // "http://localhost:5173",
+                // "https://whisper.switzerlandnorth.cloudapp.azure.com",
+                // "http://whisper.switzerlandnorth.cloudapp.azure.com",
+                // "https://51.103.209.177:5173",
+                // "http://51.103.209.177",
+                // "http://25.41.224.185:5173",
+                // "https://25.41.224.185:5173",
+                "https://25.41.224.185:5173",
+                "https://100.101.70.10:5173",
+                "https://fedora.tailfdec14.ts.net:5173",
+                "https://localhost:5173"
+                )
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials(); 
     });
 });
 
@@ -160,6 +204,8 @@ builder.Services.AddSignalR(options =>
 
 var app = builder.Build();
 
+app.UseOpenTelemetryPrometheusScrapingEndpoint();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -167,13 +213,13 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference(options =>
     {
         options.WithTitle("Whisper API")
-               .WithTheme(ScalarTheme.Moon)
-               .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+                .WithTheme(ScalarTheme.Moon)
+                .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
     });
 }
 app.UseCors("AllowReactApp");
 
-//app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 app.UseAuthentication();
 
@@ -184,4 +230,3 @@ app.MapControllers();
 app.MapHub<WSChatController>("ws/v1/chat");
 
 app.Run();
-

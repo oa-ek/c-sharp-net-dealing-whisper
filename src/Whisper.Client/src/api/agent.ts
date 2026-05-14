@@ -2,9 +2,11 @@ import axios from "axios";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { getAuthTokenFromDB, clearAuthData } from "./db";
 import type { UpdateUserDto, UserDto } from "../types/user";
+import type { EmojiDto } from "../types/emoji";
+import type { BinlistResponseDto } from "../types/binlist";
 
 const agent = axios.create({
-    baseURL: "https://26.205.72.169:7055",
+    baseURL: import.meta.env.VITE_API_URL,
 });
 
 agent.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
@@ -94,6 +96,21 @@ const Keys = {
         requests.get<any>(`/api/v1/Keys/status/${deviceId}`),
 };
 
-const agentService = { Chats, Users, Auth, Keys };
+const Emojis = {
+    getAll: () =>
+        requests.get<any>("/api/v1/Emojis/"),
+
+    getBySearch: (query: string) => 
+        requests.get<EmojiDto[]>(`/api/v1/Emojis/search?query=${query}`)
+};
+
+const Enrichment = {
+    getCardData: (bin: string) => requests.get<BinlistResponseDto>(`/api/v1/Binlist/card/${bin}`),
+};
+const Admin = {
+    getDashboardData: () => requests.get<any>("/api/v1/Admin/dashboard"),
+};
+
+const agentService = { Chats, Users, Auth, Keys, Enrichment, Admin, Emojis };
 
 export default agentService;

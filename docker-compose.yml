@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: whisper-postgres
-    restart: always
+    restart: no
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: whisper
@@ -12,19 +12,22 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  # MongoDB: Повідомлення, Медіа-метадані
   mongodb:
-    image: mongo:latest
+    image: mongo:7.0
     container_name: whisper-mongodb
-    restart: always
+    restart: no
+    mem_limit: 1024m 
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: whisper
     ports:
       - "27017:27017"
+    ulimits:
+      nofile:
+        soft: 64000
+        hard: 64000
     volumes:
-      - mongodata:/data/db
+      - ./mongo-data:/data/db:Z
 
 volumes:
   pgdata:
-  mongodata:
