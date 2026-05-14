@@ -20,8 +20,8 @@ const mediaFileExtensions = [
   '.gif', 
   '.png',
   '.jpg',
-  'jpeg',
-  'webp',
+  '.jpeg',
+  '.webp',
 ]
 
 export const ChatWindow = ({ 
@@ -36,7 +36,7 @@ export const ChatWindow = ({
   const [inputText, setInputText] = useState("");
   const [isLocalTyping, setIsLocalTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [isEmojiModalOpen, setIsEmojiModalOpen] = useState(false);
+  const [isEmojiModalOpen, setIsEmojiModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (!activeChatId || !inputText.trim()) {
@@ -184,20 +184,21 @@ export const ChatWindow = ({
             className="border-none bg-transparent focus-visible:ring-0 text-[#111] placeholder:text-gray-400 font-medium" 
             placeholder="Напишіть повідомлення..." 
           />
-          <Button onClick={() => setIsEmojiModalOpen(!isEmojiModalOpen)} variant="ghost" size="icon" className="text-gray-400 hover:text-[#348F96] rounded-xl transition-colors">
-            <div className="relative">
-              <Smile className="w-5 h-5" />
+          <Button onClick={() => {setIsEmojiModalOpen(!isEmojiModalOpen)}} variant="ghost" size="icon" className="text-gray-400 hover:text-[#348F96] rounded-xl transition-colors">
+            <Smile className="w-5 h-5" />
+          </Button>
+          <div className="relative">
               <div className="absolute bottom-10 -left-[448px]">
                 <EmojiModal 
                 isOpen={isEmojiModalOpen}
                 onSelect={(emoji: String) => {
                   setIsEmojiModalOpen(false);
                   setInputText(inputText + emoji);
+                  console.log("Must be closed")
                 }} 
                 />
               </div>
             </div>
-          </Button>
           <Button 
             onClick={handleSend}
             disabled={!inputText.trim()}
