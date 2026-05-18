@@ -4,7 +4,6 @@ import { Button } from "../../../components/ui/button";
 import type { EmojiDto } from "../../../types/emoji";
 import { ScrollArea } from "radix-ui";
 import { Input } from "../../../components/ui/input";
-import { Ghost } from "lucide-react";
 
 
 export const EmojiModal = ({isOpen, onSelect}: {isOpen: boolean, onSelect: (emoji: string) => void}) => {
