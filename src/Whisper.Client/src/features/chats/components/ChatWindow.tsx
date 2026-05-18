@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { SendHorizonal, Info, Paperclip, Smile } from "lucide-react";
+import { SendHorizonal, Info, Paperclip, Smile, SquarePlay } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 import chatSocketService from "../../../services/ChatSocketService";
 import { EmojiModal } from "./EmojiModal";
 import { CardPreview } from "./CardPreview";
+import { GifsModal } from "./GifsModal";
 
 interface ChatWindowProps {
   activeChatId?: string;
@@ -52,6 +53,7 @@ export const ChatWindow = ({
   const [isLocalTyping, setIsLocalTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isEmojiModalOpen, setIsEmojiModalOpen] = useState<boolean>(false);
+  const [isGifsModalOpen, setIsGifsModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (!activeChatId || !inputText.trim()) {
@@ -199,6 +201,22 @@ export const ChatWindow = ({
             className="border-none bg-transparent focus-visible:ring-0 text-[#111] placeholder:text-gray-400 font-medium" 
             placeholder="Напишіть повідомлення..." 
           />
+          <Button onClick={() => {setIsGifsModalOpen(!isGifsModalOpen)}} variant="ghost" size="icon" className="text-gray-400 hover:text-[#348F96] rounded-xl transition-colors">
+            <SquarePlay className="w-5 h-5" />
+          </Button>
+          <div className="relative">
+              <div className="absolute bottom-10 -left-[448px]">
+                <GifsModal 
+                isOpen={isGifsModalOpen}
+                onSelect={(gifLink: string) => {
+                  setIsGifsModalOpen(false);
+                  if (gifLink.length !== 0 && gifLink.endsWith(".gif"))
+                  onSendMessage(gifLink);
+                  handleSend();
+                }} 
+                />
+              </div>
+            </div>
           <Button onClick={() => {setIsEmojiModalOpen(!isEmojiModalOpen)}} variant="ghost" size="icon" className="text-gray-400 hover:text-[#348F96] rounded-xl transition-colors">
             <Smile className="w-5 h-5" />
           </Button>
@@ -209,7 +227,6 @@ export const ChatWindow = ({
                 onSelect={(emoji: String) => {
                   setIsEmojiModalOpen(false);
                   setInputText(inputText + emoji);
-                  console.log("Must be closed")
                 }} 
                 />
               </div>
