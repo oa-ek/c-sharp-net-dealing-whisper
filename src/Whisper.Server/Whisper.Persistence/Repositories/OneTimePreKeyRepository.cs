@@ -18,7 +18,7 @@ namespace Whisper.Persistence.Repositories
         public async Task<OneTimePreKey> PatchUsedAsync(OneTimePreKey preKey)
         {
             preKey.IsUsed = true;
-            _dbSet.Update(preKey);
+            _dbSet.Remove(preKey);
             return preKey;
         }
 
