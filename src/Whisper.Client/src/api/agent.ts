@@ -4,6 +4,7 @@ import { getAuthTokenFromDB, clearAuthData } from "./db";
 import type { UpdateUserDto, UserDto } from "../types/user";
 import type { EmojiDto } from "../types/emoji";
 import type { BinlistResponseDto } from "../types/binlist";
+import type { GifResponseDto } from "../types/gif";
 
 const agent = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
@@ -98,11 +99,19 @@ const Keys = {
 
 const Emojis = {
     getAll: () =>
-        requests.get<any>("/api/v1/Emojis/"),
+        requests.get<EmojiDto[]>("/api/v1/Emojis/"),
 
     getBySearch: (query: string) => 
-        requests.get<EmojiDto[]>(`/api/v1/Emojis/search?query=${query}`)
+        requests.get<EmojiDto[]>(`/api/v1/Emojis/search?query=${query}`),
 };
+
+const Gifs = {
+    getTrending: () =>
+        requests.get<GifResponseDto>("/api/v1/Gifs/trending"),
+
+    getBySearch: (query: string) =>
+        requests.get<GifResponseDto>(`/api/v1/Gifs/search?query=${query}`),
+}
 
 const Enrichment = {
     getCardData: (bin: string) => requests.get<BinlistResponseDto>(`/api/v1/Binlist/card/${bin}`),
@@ -111,6 +120,6 @@ const Admin = {
     getDashboardData: () => requests.get<any>("/api/v1/Admin/dashboard"),
 };
 
-const agentService = { Chats, Users, Auth, Keys, Enrichment, Admin, Emojis };
+const agentService = { Chats, Users, Auth, Keys, Enrichment, Admin, Emojis, Gifs};
 
 export default agentService;

@@ -132,6 +132,16 @@ builder.Services.AddHttpClient<IEmojiService, EmojiService>((serviceProvider, cl
     client.BaseAddress = new Uri(options.BaseLink);
 }).AddStandardResilienceHandler();
 
+// Klipy Api Service
+builder.Services.Configure<KlipyApiSettings>(builder.Configuration.GetSection("KlipyApi"));
+builder.Services.AddHttpClient<IGifsService, KlipyService>((serviceProvider, client) =>
+{
+    var options = serviceProvider
+        .GetRequiredService<IOptions<KlipyApiSettings>>()
+        .Value;
+    client.BaseAddress = new Uri(options.BaseLink);
+}).AddStandardResilienceHandler();
+
 
 builder.Services.AddCors(options =>
 {
