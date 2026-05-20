@@ -15,7 +15,7 @@ export const GifsModal = ({isOpen, onSelect}: {isOpen: boolean, onSelect: (gifLi
 
     const updateGifs = (data: GifResponseDto) => {
         // may change quality my changing code. From lower: xs, sm, md, hd
-        const quality = "md"
+        const quality = "sm"
         if (data.result)
             setGifs(data.data.data.map((data => data.file[quality].gif)));  
     }
@@ -60,18 +60,18 @@ export const GifsModal = ({isOpen, onSelect}: {isOpen: boolean, onSelect: (gifLi
                 <ScrollArea.Root>
                     <ScrollArea.Viewport className="h-80 w-[100%]" >
                         <div className="flex w-full justify-between">
-                            <div className="w-[49%]">
+                            <div className="w-[49.5%]">
                                 {
-                                    gifs.filter((gif, i) => { i % 2 === 0; }).map((gif) => {
+                                    gifs.filter((gif, i) => i % 2 == 0).map((gif) => {
                                         return (
-                                            <img src={gif.url} className="w-full cursor-pointer mb-1 border-2 border-[#338B97]/80 rounded" onClick={() => onSelect(gif.url)}/>
+                                            <img src={gif.url} alt={gif.url} className="w-full h-auto cursor-pointer mb-1 border-2 border-[#338B97]/80 rounded" onClick={() => onSelect(gif.url)}/>
                                         );
                                     })
                                 }
                             </div>
-                            <div className="w-[49%]">
+                            <div className="w-[49.5%]">
                                 {
-                                    gifs.filter((gif, i) => { i % 2 === 1; }).map((gif) => {
+                                    gifs.filter((gif, i) => i % 2 === 1).map((gif) => {
                                         return (
                                             <img src={gif.url} className="w-full cursor-pointer mb-1 border-2 border-[#338B97]/80 rounded" onClick={() => onSelect(gif.url)}/>
                                         );
@@ -80,6 +80,11 @@ export const GifsModal = ({isOpen, onSelect}: {isOpen: boolean, onSelect: (gifLi
                             </div>
                         </div>
                     </ScrollArea.Viewport>
+                    <ScrollArea.Scrollbar
+                            className="ScrollAreaScrollbar"
+                            orientation="vertical">
+                            <ScrollArea.Thumb />
+                        </ScrollArea.Scrollbar>
                 </ScrollArea.Root>
             </div>
             }
