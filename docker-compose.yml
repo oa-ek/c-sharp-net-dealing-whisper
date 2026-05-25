@@ -29,5 +29,20 @@ services:
     volumes:
       - ./mongo-data:/data/db:Z
 
+  minio:
+      image: minio/minio:latest
+      container_name: whisper-minio
+      restart: no
+      command: server /data --address ":9000" --console-address ":9001"
+      environment:
+        MINIO_ROOT_USER: admin
+        MINIO_ROOT_PASSWORD: whisper_whisper
+      ports:  
+        - "9000:9000"
+        - "9001:9001"
+      volumes:
+        - miniodata:/data:Z
+
 volumes:
   pgdata:
+  miniodata:
