@@ -421,5 +421,6 @@ FodyWeavers.xsd
 appsettings.json
 
 mongo-data
+minio-data
 
 .env*
