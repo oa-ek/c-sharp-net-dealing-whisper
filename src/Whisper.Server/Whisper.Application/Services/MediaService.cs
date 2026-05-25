@@ -26,7 +26,6 @@ public class MinioMediaService : IMediaService
         var fileGuid = Guid.NewGuid();
         var fileIdForStorage = fileGuid.ToString("N");
 
-        // 1. Завантажуємо сам бінарник у хмару MinIO
         var putObjectArgs = new PutObjectArgs()
             .WithBucket(_bucketName)
             .WithObject(fileIdForStorage)
@@ -46,7 +45,6 @@ public class MinioMediaService : IMediaService
             Url = $"/api/v1/media/download/{fileIdForStorage}"
         };
 
-        // 3. Зберігаємо метадані в MongoDB колекцію "attachments-collection"
         await _attachmentRepository.AddAsync(attachment);
 
         return attachment;
