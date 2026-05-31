@@ -5,6 +5,7 @@ import type { UpdateUserDto, UserDto } from "../types/user";
 import type { EmojiDto } from "../types/emoji";
 import type { BinlistResponseDto } from "../types/binlist";
 import type { GifResponseDto } from "../types/gif";
+import type { ChatDto } from "../types/chat";
 
 const agent = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
@@ -60,7 +61,7 @@ const Auth = {
 };
 
 const Chats = {
-    list: () => requests.get<any[]>("/api/v1/Chats/list"), 
+    list: () => requests.get<ChatDto[]>("/api/v1/Chats/list"), 
     messages: (chatId: string) => 
         requests.get<any[]>(`/api/v1/Chats/${chatId}/messages?limit=50&offset=0`),
     create: (receiverId: string, name: string) => 
@@ -70,7 +71,7 @@ const Chats = {
         }),
     sendMessage: (body: any) => 
         requests.post<any>("/api/v1/Chats/messages", body),
-    getMembers: (chatId: string) => requests.get<string[]>(`/api/v1/Chats/${chatId}/get-members`),
+    getMembers: (chatId: string) => requests.get<UserDto[]>(`/api/v1/Chats/${chatId}/get-members`),
 };
 
 const Users = {

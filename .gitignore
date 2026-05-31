@@ -424,3 +424,4 @@ mongo-data
 minio-data
 
 .env*
+.VSCodeCounter
