@@ -7,15 +7,17 @@ import chatSocketService from "../../../services/ChatSocketService";
 import { EmojiModal } from "./EmojiModal";
 import { CardPreview } from "./CardPreview";
 import { GifsModal } from "./GifsModal";
+import type { ChatDto } from "../../../types/chat";
+import type { UserDto } from "../../../types/user";
 
 interface ChatWindowProps {
-  activeChatId?: string;
-  activeChatName?: string;
+  activeChat: ChatDto;
   onShowInfo: () => void;
   messages: any[]; 
   onSendMessage: (content: string) => void;
   currentUserId: string | null;
   isPartnerTyping: boolean; 
+  activeChatMembers?: UserDto[];
 }
 
 const mediaFileExtensions = [
@@ -40,14 +42,14 @@ const renderMessageWithCards = (text: string) => {
   });
 };
 
-export const ChatWindow = ({ 
-  activeChatId, 
-  activeChatName, 
+export const ChatWindow = ({  
+  activeChat, 
   onShowInfo, 
   messages, 
   onSendMessage,
   currentUserId,
-  isPartnerTyping 
+  isPartnerTyping,
+  activeChatMembers
 }: ChatWindowProps) => {
   const [inputText, setInputText] = useState("");
   const [isLocalTyping, setIsLocalTyping] = useState(false);
@@ -56,26 +58,26 @@ export const ChatWindow = ({
   const [isGifsModalOpen, setIsGifsModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!activeChatId || !inputText.trim()) {
+    if (!activeChat.id || !inputText.trim()) {
       if (isLocalTyping) {
-        chatSocketService.stopTyping(activeChatId!);
+        chatSocketService.stopTyping(activeChat.id);
         setIsLocalTyping(false);
       }
       return;
     }
 
     if (!isLocalTyping) {
-      chatSocketService.startTyping(activeChatId);
+      chatSocketService.startTyping(activeChat.id);
       setIsLocalTyping(true);
     }
 
     const timeout = setTimeout(() => {
-      chatSocketService.stopTyping(activeChatId);
+      chatSocketService.stopTyping(activeChat.id);
       setIsLocalTyping(false);
     }, 3000);
 
     return () => clearTimeout(timeout);
-  }, [inputText, activeChatId]);
+  }, [inputText, activeChat.id]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -94,11 +96,11 @@ export const ChatWindow = ({
     if (!inputText.trim()) return;
     onSendMessage(inputText);
     setInputText("");
-    if (activeChatId) chatSocketService.stopTyping(activeChatId);
+    if (activeChat.id) chatSocketService.stopTyping(activeChat.id);
     setIsLocalTyping(false);
   };
 
-  if (!activeChatId) {
+  if (!activeChat.id) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-[#f9fafb] h-full">
         <p className="text-gray-400 text-[10px] tracking-[0.5em] font-black uppercase opacity-50">
@@ -115,11 +117,19 @@ export const ChatWindow = ({
       <div className="h-16 flex-none border-b border-gray-100 flex items-center justify-between px-6 bg-white z-10 shadow-sm">
         <div className="flex items-center gap-3 cursor-pointer group" onClick={onShowInfo}>
           <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 font-black uppercase border border-gray-100 group-hover:border-[#348F96] transition-all duration-300">
-            {activeChatName ? activeChatName[0] : "?"}
+            {
+              activeChat.isGroup ?
+              activeChat.name :
+              activeChatMembers ? activeChatMembers.find((member) => member.id != currentUserId)?.username[0] : "?"
+            }
           </div>
           <div>
             <span className="text-[#111] font-bold block transition-colors group-hover:text-[#2D6BA3]">
-              {activeChatName}
+              {
+                activeChat.isGroup ?
+                activeChat.name :
+                activeChatMembers ? activeChatMembers.find((member) => member.id != currentUserId)?.username : "?"
+              }
             </span>
             {isPartnerTyping ? (
                 <span className="text-[10px] text-[#348F96] font-black animate-pulse uppercase tracking-widest">

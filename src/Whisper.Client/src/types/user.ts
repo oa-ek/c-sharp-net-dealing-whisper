@@ -1,10 +1,11 @@
 export interface UserDto {
-  userId: string;
+  id: string;
   username: string;
-  displayName: string;
-  pfpLink: string;
-  bio: string;
+  displayName: string | null;
+  pfpLink: string | null;
+  bio: string | null;
   lastSeen: Date;
+  activeDeviceId: any[];
 }
 
 export interface UpdateUserDto {

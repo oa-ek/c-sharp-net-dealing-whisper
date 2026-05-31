@@ -1,3 +1,10 @@
+export interface ChatDto {
+    id: string;
+    name: string;
+    isGroup: boolean;
+    createdBy: Date;
+}
+
 export interface MessageCreateDto {
     chatId: string;
     ciphertext: string;

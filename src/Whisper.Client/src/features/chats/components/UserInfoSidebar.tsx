@@ -2,18 +2,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avat
 import { Button } from "../../../components/ui/button";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 import { X, Clock, Info } from "lucide-react";
-
-interface UserProfile {
-  id: string;
-  username: string;
-  displayName?: string | null;
-  pfpLink?: string | null;
-  bio?: string | null;
-  lastSeen?: string | Date;
-}
+import type { UserDto } from "../../../types/user";
 
 interface UserInfoProps {
-  user: UserProfile | null;
+  user: UserDto;
   onClose: () => void;
 }
 

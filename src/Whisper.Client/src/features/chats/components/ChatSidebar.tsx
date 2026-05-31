@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useEffectEvent, useState } from "react";
 import agent from "../../../api/agent";
 import { wipeLocalData, clearAuthData } from "../../../api/db";
 import ChatSocketService from "../../../services/ChatSocketService";
@@ -22,15 +22,19 @@ import {
 } from "../../../components/ui/dropdown-menu";
 import logo from "@/components/ui/WhisperLogo.ico";
 import { UserProfile } from "../../users/components/UserProfileModal";
+import type { UserDto } from "../../../types/user";
+import type { ChatDto } from "../../../types/chat";
 
 interface SidebarProps {
-  chats: any[];
+  chats: ChatDto[];
+  activeUser: UserDto | undefined;
   onSelectChat: (id: string) => void;
   refreshChats: () => Promise<void>;
   activeChatId?: string; 
+  chatMembers?: Record<string, UserDto[]>;
 }
 
-export const ChatSidebar = ({ chats, onSelectChat, refreshChats, activeChatId }: SidebarProps) => {
+export const ChatSidebar = ({ chats, activeUser, onSelectChat, refreshChats, activeChatId, chatMembers }: SidebarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -205,12 +209,20 @@ export const ChatSidebar = ({ chats, onSelectChat, refreshChats, activeChatId }:
               >
                 <Avatar className={`w-11 h-11 border transition-colors ${isActive ? "border-white/30" : "border-gray-200"}`}>
                   <AvatarFallback className={`uppercase font-bold transition-colors ${isActive ? "bg-white/20 text-white" : "bg-gray-100 text-gray-400"}`}>
-                    {chat.name ? chat.name[0] : "?"}
+                    {
+                      chat.isGroup ?
+                        chat.name : 
+                        chatMembers ? chatMembers[chat.id]?.find((member) => member.id != activeUser?.id)?.username[0] : "?"
+                    }
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-bold truncate transition-colors ${isActive ? "text-white" : "text-gray-900"}`}>
-                    {chat.name}
+                    {
+                      chat.isGroup ?
+                      chat.name : 
+                      chatMembers ? chatMembers[chat.id]?.find((member) => member.id != activeUser?.id)?.username : "?"
+                    }
                   </p>
                   <p className={`text-[11px] font-medium truncate transition-colors ${isActive ? "text-white/80" : "text-gray-400"}`}>
                     {/* E2EE Secure Session */}

@@ -6,21 +6,30 @@ import { EncryptionService } from "../../../services/encryptionService";
 import { ChatSidebar } from "./ChatSidebar";
 import { ChatWindow } from "./ChatWindow";
 import { UserInfoSidebar } from "./UserInfoSidebar";
-import type { MessageDto } from "../../../types/chat";
+import type { ChatDto, MessageDto } from "../../../types/chat";
+import type { UserDto } from "../../../types/user";
 
 export const ChatsPageFeature = () => {
-  const [chats, setChats] = useState<any[]>([]);
+  const [chats, setChats] = useState<ChatDto[]>([]);
   const [messages, setMessages] = useState<MessageDto[]>([]);
   const [decryptedMessages, setDecryptedMessages] = useState<Record<string, string>>({});
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [activeChatMembers, setActiveChatMembers] = useState<any[]>([]); 
   const [selectedChatId, setSelectedChatId] = useState<string | undefined>(undefined);
+  const [selectedChat, setSelectedChat] = useState<ChatDto>();
   const [showInfo, setShowInfo] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<UserDto>();
+  const [activeUser, setActiveUser] = useState<UserDto>();
+  const [chatMembers, setChatMembers] = useState<Record<string, UserDto[]>>();
 
   const chatsRef = useRef(chats);
   useEffect(() => { chatsRef.current = chats; }, [chats]);
+
+  useEffect(() => {
+    const getActiveUser = async() => { setActiveUser(await agent.Users.getMe()); }
+    getActiveUser();
+  }, [])
 
   const activeChat = useMemo(() => chats.find((c) => c.id === selectedChatId), [chats, selectedChatId]);
 
@@ -71,6 +80,20 @@ export const ChatsPageFeature = () => {
   useEffect(() => {
     loadChats();
   }, [loadChats]);
+
+  useEffect(() => {
+    const getChatMembers = async(chatId: string) => {
+      const members = await agent.Chats.getMembers(chatId);
+      setChatMembers((prev) => ({
+        ...prev,
+        [chatId]: members
+      }))
+    } 
+
+    chats.forEach((chat) => {
+      getChatMembers(chat.id);
+    });
+  }, [chats])
 
   useEffect(() => {
     const connect = async () => {
@@ -186,11 +209,11 @@ export const ChatsPageFeature = () => {
     } catch (err) { console.error("Помилка відправки:", err); }
   };
 
+  // handles opening of profile info and sets the user for it
   const handleOpenProfile = async () => {
-    if (!activeChat) return;
+    if (!activeChat || !chatMembers || !selectedChat) return;
     try {
-      const results = await agent.Users.search(activeChat.name);
-      const user = results.find((u: any) => u.username === activeChat.name) || results[0];
+      const user = chatMembers[selectedChat.id].find((member) => member.id != activeUser?.id)
       if (user) {
         setProfileData(user);
         setShowInfo(true);
@@ -198,17 +221,25 @@ export const ChatsPageFeature = () => {
     } catch (err) { console.error("Не вдалося завантажити профіль:", err); }
   };
 
+  // set active chat when selectedChatId is updated
+  useEffect(() => {
+    setSelectedChat(chats.find((chat) => chat.id === selectedChatId))
+  }, [selectedChatId])
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#f9fafb]">
       <ChatSidebar 
-        chats={chats} 
+        chats={chats}
+        activeUser={activeUser}
         onSelectChat={(id) => setSelectedChatId(id)} 
         refreshChats={loadChats} 
         activeChatId={selectedChatId}
+        chatMembers={chatMembers}
       />
+      {
+        selectedChat ? 
         <ChatWindow 
-        activeChatId={selectedChatId} 
-        activeChatName={activeChat?.name}
+        activeChat={selectedChat} 
         messages={messages.map(m => ({ 
             ...m, 
             ciphertext: decryptedMessages[m.id] || (m.ciphertext.startsWith("#Init") ? "[System Handshake]" : "...") 
@@ -217,11 +248,17 @@ export const ChatsPageFeature = () => {
         isPartnerTyping={isPartnerTyping}
         onShowInfo={handleOpenProfile} 
         onSendMessage={handleSendMessage}
-      />
-      {showInfo && (
+        activeChatMembers={chatMembers ? chatMembers[selectedChat.id] : undefined}
+      /> 
+      :
+      <p>
+        {/* Select chat to begin chatting */}
+      </p>
+      }
+      {showInfo && profileData && (
         <UserInfoSidebar 
           user={profileData} 
-          onClose={() => { setShowInfo(false); setProfileData(null); }} 
+          onClose={() => { setShowInfo(false); }} 
         />
       )}
     </div>
