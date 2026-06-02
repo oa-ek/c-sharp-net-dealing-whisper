@@ -26,7 +26,6 @@ export default defineConfig(({ mode }) => {
       host: '127.0.0.1', 
       port: 5173,
       allowedHosts: ['.whisper-secure.space', 'whisper-secure.space'],
-      https: true, 
       
       proxy: {
         '/api': {
