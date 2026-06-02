@@ -226,6 +226,17 @@ export const ChatsPageFeature = () => {
     setSelectedChat(chats.find((chat) => chat.id === selectedChatId))
   }, [selectedChatId])
 
+  // handle chat info panel update when switching chats
+  useEffect(() => {
+    if (showInfo && selectedChat && chatMembers) {
+      console.log("Update happened just now!")
+      const user = chatMembers[selectedChat.id].find((member) => member.id != activeUser?.id)
+      if (user) {
+        setProfileData(user);
+      }
+    }
+  }, [selectedChat])
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#f9fafb]">
       <ChatSidebar 
