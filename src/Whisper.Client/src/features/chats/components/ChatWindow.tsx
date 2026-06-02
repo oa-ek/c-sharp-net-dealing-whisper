@@ -56,6 +56,7 @@ export const ChatWindow = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isEmojiModalOpen, setIsEmojiModalOpen] = useState<boolean>(false);
   const [isGifsModalOpen, setIsGifsModalOpen] = useState<boolean>(false);
+  const [chatDisplayName, setChatDisplayName] = useState<string>();
 
   useEffect(() => {
     if (!activeChat.id || !inputText.trim()) {
@@ -100,6 +101,17 @@ export const ChatWindow = ({
     setIsLocalTyping(false);
   };
 
+  useEffect(() => {
+    const chatMember = activeChatMembers ? activeChatMembers?.find((member) => member.id != currentUserId) : null; 
+    setChatDisplayName(activeChat.isGroup ?
+      activeChat.name :
+      chatMember ?
+        chatMember?.displayName ?
+          chatMember?.displayName :
+          chatMember?.username :
+        "?")
+  }, [activeChat])
+
   if (!activeChat.id) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-[#f9fafb] h-full">
@@ -112,24 +124,16 @@ export const ChatWindow = ({
 
   return (
     <div className="flex-1 flex flex-col bg-[#f9fafb] h-full overflow-hidden">
-      
+
       {/* Header */}
       <div className="h-16 flex-none border-b border-gray-100 flex items-center justify-between px-6 bg-white z-10 shadow-sm">
         <div className="flex items-center gap-3 cursor-pointer group" onClick={onShowInfo}>
           <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 font-black uppercase border border-gray-100 group-hover:border-[#348F96] transition-all duration-300">
-            {
-              activeChat.isGroup ?
-              activeChat.name :
-              activeChatMembers ? activeChatMembers.find((member) => member.id != currentUserId)?.username[0] : "?"
-            }
+            {chatDisplayName ? chatDisplayName[0] : "?" }
           </div>
           <div>
             <span className="text-[#111] font-bold block transition-colors group-hover:text-[#2D6BA3]">
-              {
-                activeChat.isGroup ?
-                activeChat.name :
-                activeChatMembers ? activeChatMembers.find((member) => member.id != currentUserId)?.username : "?"
-              }
+              { chatDisplayName }
             </span>
             {isPartnerTyping ? (
                 <span className="text-[10px] text-[#348F96] font-black animate-pulse uppercase tracking-widest">

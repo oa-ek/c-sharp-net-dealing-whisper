@@ -197,6 +197,15 @@ export const ChatSidebar = ({ chats, activeUser, onSelectChat, refreshChats, act
         <div className="space-y-1.5 pb-4">
           {chats.map((chat) => {
             const isActive = activeChatId === chat.id;
+            const chatMember = chatMembers ? chatMembers[chat.id]?.find((member) => member.id != activeUser?.id) : null;
+            const chatDisplayName: string = 
+              chat.isGroup ?
+                chat.name :
+                chatMember ?
+                  chatMember?.displayName ?
+                    chatMember?.displayName :
+                    chatMember?.username :
+                  "?";
             return (
               <div 
                 key={chat.id} 
@@ -209,20 +218,12 @@ export const ChatSidebar = ({ chats, activeUser, onSelectChat, refreshChats, act
               >
                 <Avatar className={`w-11 h-11 border transition-colors ${isActive ? "border-white/30" : "border-gray-200"}`}>
                   <AvatarFallback className={`uppercase font-bold transition-colors ${isActive ? "bg-white/20 text-white" : "bg-gray-100 text-gray-400"}`}>
-                    {
-                      chat.isGroup ?
-                        chat.name : 
-                        chatMembers ? chatMembers[chat.id]?.find((member) => member.id != activeUser?.id)?.username[0] : "?"
-                    }
+                    { chatDisplayName[0] }
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-bold truncate transition-colors ${isActive ? "text-white" : "text-gray-900"}`}>
-                    {
-                      chat.isGroup ?
-                      chat.name : 
-                      chatMembers ? chatMembers[chat.id]?.find((member) => member.id != activeUser?.id)?.username : "?"
-                    }
+                    { chatDisplayName }
                   </p>
                   <p className={`text-[11px] font-medium truncate transition-colors ${isActive ? "text-white/80" : "text-gray-400"}`}>
                     {/* E2EE Secure Session */}
