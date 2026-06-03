@@ -10,7 +10,9 @@ import { Input } from "../../../components/ui/input";
 import { EncryptionService } from "../../../services/encryptionService";
 import { 
   Search, Settings, LogOut, User, UserPlus, 
-  Loader2, MessageSquarePlus, ShieldAlert 
+  Loader2, MessageSquarePlus, ShieldAlert, 
+  InfoIcon,
+  EllipsisVertical
 } from "lucide-react";
 import {
   DropdownMenu,
