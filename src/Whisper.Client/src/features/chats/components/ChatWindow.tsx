@@ -169,7 +169,7 @@ export const ChatWindow = ({
           setIsConfirmModalOpen(false)
         }}
         title="Видалити чат?"
-        details={`Ви впевнені що хочете видалити чат з ${chatDisplayName}?`}
+        details={`Видалення чату з користувачем ${chatDisplayName} є незворотньою дією. Ви впевнені?`}
       />
 
       {/* Messages Area */}

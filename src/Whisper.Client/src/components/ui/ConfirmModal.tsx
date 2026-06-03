@@ -9,7 +9,7 @@ interface ConfirmModalProps {
 }
 
 export const ConfirmModal = ({isOpen, onSelect, title, details }: ConfirmModalProps) => {
-
+    
     if (!isOpen) return;
 
     return (
@@ -27,10 +27,10 @@ export const ConfirmModal = ({isOpen, onSelect, title, details }: ConfirmModalPr
                             className="p-5 bg-[#64B59D] cursor-pointer hover:bg-[#348F96] text-md"
                             onClick={() => onSelect(false)}
                             >
-                            Відмінити
+                            Скасувати
                         </Button>
                         <Button 
-                            className="p-5 bg-[#64B59D] cursor-pointer hover:bg-[#348F96] text-md"
+                            className={`p-5 bg-[#B54141] cursor-pointer hover:bg-[#A32D2D] text-md`}
                             onClick={() => onSelect(true)}
                             >
                             Так
