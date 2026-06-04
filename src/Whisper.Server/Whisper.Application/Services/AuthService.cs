@@ -88,6 +88,9 @@ namespace Whisper.Application.Services
             if (user == null || !_passwordService.VerifyPassword(dto.Password, user.PasswordHash))
                 throw new Exception("Incorrect email or password");
 
+            if (user.Devices.Any(device => device.Id != dto.DeviceId))
+                throw new Exception("Device not recognized. Device registration required.");
+
             var device = await _deviceRepository.GetByIdAsync(dto.DeviceId);
             if (device == null)
                 throw new Exception("Device not recognized. Device registration required.");

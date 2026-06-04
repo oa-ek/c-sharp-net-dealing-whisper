@@ -228,7 +228,7 @@ export const ChatsPageFeature = () => {
     const localDb = await db.auth.toCollection().last();
     if (localDb) {
       // console.log(localDb.chats.filter((chat) => chat.chatId != activeChat.id))
-      await db.auth.put({...localDb, chats: localDb.chats.filter((chat) => chat.chatId != activeChat.id)})
+      await db.auth.put({...localDb, chats: localDb.chats.filter((chat) => chat.chatId != selectedChat.id)})
     } 
     loadChats();
     setSelectedChatId(undefined)
