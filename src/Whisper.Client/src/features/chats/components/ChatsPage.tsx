@@ -195,20 +195,25 @@ export const ChatsPageFeature = () => {
     loadData();
   }, [selectedChatId, decryptBatch, loadChats]);
 
-  const handleSendMessage = async (content: string) => {
-    if (!selectedChatId) return;
-    try {
-      const sharedKey = await getChatSharedKey(selectedChatId);
-      if (!sharedKey) {
-          alert("Канал ще не захищено. Зачекайте ініціалізації.");
-          return;
-      }
-      const { ciphertext, wrappedKey } = await EncryptionService.encryptMessage(content, sharedKey);
-      await chatSocketService.sendMessage({
-        chatId: selectedChatId, ciphertext, wrappedKey, attachments: []
-      });
+  const handleSendMessage = async (content: string, attachments: any[] = []) => {
+  if (!selectedChatId) return;
+  try {
+    const sharedKey = await getChatSharedKey(selectedChatId);
+    if (!sharedKey) {
+        alert("Канал ще не захищено. Зачекайте ініціалізації.");
+        return;
+    }
+    const { ciphertext, wrappedKey } = await EncryptionService.encryptMessage(content, sharedKey);
+    
+    await chatSocketService.sendMessage({
+      chatId: selectedChatId, 
+      ciphertext, 
+      wrappedKey, 
+      attachments: attachments 
+    });
     } catch (err) { console.error("Помилка відправки:", err); }
   };
+  
 
   // handles opening of profile info and sets the user for it
   const handleOpenProfile = async () => {

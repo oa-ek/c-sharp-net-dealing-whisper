@@ -122,6 +122,19 @@ const Admin = {
     getDashboardData: () => requests.get<any>("/api/v1/Admin/dashboard"),
 };
 
-const agentService = { Chats, Users, Auth, Keys, Enrichment, Admin, Emojis, Gifs};
+const Media = {
+    upload: (file: File) => {
+        const formData = new FormData();
+        formData.append("file", file); 
+        return agent.post<any>("/api/v1/Media/upload", formData);
+    },
+    download: (fileId: string) => {
+        return agent.get<Blob>(`/api/v1/Media/download/${fileId}`, {
+            responseType: 'blob'
+        }).then(response => response.data);
+    }
+}
+
+const agentService = { Chats, Users, Auth, Keys, Enrichment, Admin, Emojis, Gifs, Media };
 
 export default agentService;
