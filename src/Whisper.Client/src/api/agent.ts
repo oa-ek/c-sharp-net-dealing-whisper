@@ -32,7 +32,7 @@ agent.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
 agent.interceptors.response.use(
     (response) => response,
     async (error) => {
-        if (error.response && error.response.status === 401) {
+        if (error.response && error.response.status === 401 && window.location.pathname !== "/auth/login") {
             await clearAuthData();
             localStorage.clear();
             window.location.replace("/auth/login");
@@ -72,6 +72,7 @@ const Chats = {
     sendMessage: (body: any) => 
         requests.post<any>("/api/v1/Chats/messages", body),
     getMembers: (chatId: string) => requests.get<UserDto[]>(`/api/v1/Chats/${chatId}/get-members`),
+    remove: (chatId: string) => requests.delete(`/api/v1/Chats/${chatId}`)
 };
 
 const Users = {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { SendHorizonal, Info, Paperclip, Smile, SquarePlay } from "lucide-react";
+import { SendHorizonal, Info, Paperclip, Smile, SquarePlay, Trash } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { ScrollArea } from "../../../components/ui/scroll-area";
@@ -9,12 +9,16 @@ import { CardPreview } from "./CardPreview";
 import { GifsModal } from "./GifsModal";
 import type { ChatDto } from "../../../types/chat";
 import type { UserDto } from "../../../types/user";
+import { ConfirmModal } from "../../../components/ui/ConfirmModal";
+import agent from "../../../api/agent";
+import { db } from "../../../api/db";
 
 interface ChatWindowProps {
   activeChat: ChatDto;
   onShowInfo: () => void;
   messages: any[]; 
   onSendMessage: (content: string) => void;
+  onChatRemoval: () => void;
   currentUserId: string | null;
   isPartnerTyping: boolean; 
   activeChatMembers?: UserDto[];
@@ -47,6 +51,7 @@ export const ChatWindow = ({
   onShowInfo, 
   messages, 
   onSendMessage,
+  onChatRemoval,
   currentUserId,
   isPartnerTyping,
   activeChatMembers
@@ -57,6 +62,7 @@ export const ChatWindow = ({
   const [isEmojiModalOpen, setIsEmojiModalOpen] = useState<boolean>(false);
   const [isGifsModalOpen, setIsGifsModalOpen] = useState<boolean>(false);
   const [chatDisplayName, setChatDisplayName] = useState<string>();
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false)
 
   useEffect(() => {
     if (!activeChat.id || !inputText.trim()) {
@@ -146,10 +152,25 @@ export const ChatWindow = ({
             )}
           </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={onShowInfo} className="text-gray-400 hover:text-[#2D6BA3] hover:bg-blue-50 rounded-xl transition-all">
-          <Info className="w-5 h-5" />
-        </Button>
+        <div>
+          <Button variant="ghost" size="icon" onClick={() => setIsConfirmModalOpen(true)} className="text-gray-400 hover:text-[#A32D2D] hover:bg-red-50 rounded-xl transition-all">
+            <Trash className="w-5 h-5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onShowInfo} className="text-gray-400 hover:text-[#2D6BA3] hover:bg-blue-50 rounded-xl transition-all">
+            <Info className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
+
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        onSelect={(answer: boolean) => {
+          if (answer) onChatRemoval()
+          setIsConfirmModalOpen(false)
+        }}
+        title="Видалити чат?"
+        details={`Видалення чату з користувачем ${chatDisplayName} є незворотньою дією. Ви впевнені?`}
+      />
 
       {/* Messages Area */}
       <div className="flex-1 min-h-0 relative">

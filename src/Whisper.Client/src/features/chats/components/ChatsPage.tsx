@@ -82,6 +82,7 @@ export const ChatsPageFeature = () => {
   }, [loadChats]);
 
   useEffect(() => {
+    if (chats.length === 0) return;
     const getChatMembers = async(chatId: string) => {
       const members = await agent.Chats.getMembers(chatId);
       setChatMembers((prev) => ({
@@ -221,6 +222,18 @@ export const ChatsPageFeature = () => {
     } catch (err) { console.error("Не вдалося завантажити профіль:", err); }
   };
 
+  const handleChatRemoval = async () => {
+    if (!selectedChat) return;
+    agent.Chats.remove(selectedChat.id);
+    const localDb = await db.auth.toCollection().last();
+    if (localDb) {
+      // console.log(localDb.chats.filter((chat) => chat.chatId != activeChat.id))
+      await db.auth.put({...localDb, chats: localDb.chats.filter((chat) => chat.chatId != selectedChat.id)})
+    } 
+    loadChats();
+    setSelectedChatId(undefined)
+  }
+
   // set active chat when selectedChatId is updated
   useEffect(() => {
     setSelectedChat(chats.find((chat) => chat.id === selectedChatId))
@@ -259,6 +272,7 @@ export const ChatsPageFeature = () => {
         isPartnerTyping={isPartnerTyping}
         onShowInfo={handleOpenProfile} 
         onSendMessage={handleSendMessage}
+        onChatRemoval={handleChatRemoval}
         activeChatMembers={chatMembers ? chatMembers[selectedChat.id] : undefined}
       /> 
       :
