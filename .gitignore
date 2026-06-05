@@ -424,5 +424,8 @@ appsettings.*.json
 mongo-data
 minio-data
 
-.env*
+.env
+.env.development
+.env.production
+
 .VSCodeCounter
