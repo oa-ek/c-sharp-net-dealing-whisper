@@ -26,6 +26,7 @@ import logo from "@/components/ui/WhisperLogo.ico";
 import { UserProfile } from "../../users/components/UserProfileModal";
 import type { UserDto } from "../../../types/user";
 import type { ChatDto } from "../../../types/chat";
+import {RemoteAvatar} from "./RemoteAvatar";
 
 interface SidebarProps {
   chats: ChatDto[];
@@ -120,9 +121,11 @@ export const ChatSidebar = ({ chats, activeUser, onSelectChat, refreshChats, act
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100 focus-visible:ring-0 transition-colors">
-              <Avatar className="w-8 h-8 border border-gray-200 shadow-sm">
-                <AvatarFallback className="bg-gray-50 text-[10px] text-gray-500 font-bold">ME</AvatarFallback>
-              </Avatar>
+              <RemoteAvatar 
+                link={activeUser?.pfpLink || undefined} 
+                initial="ME"
+                className="w-8 h-8 border border-gray-200 shadow-sm"
+              />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 bg-white border-gray-200 text-gray-700 shadow-2xl rounded-2xl p-1 animate-in zoom-in-95">
@@ -176,6 +179,11 @@ export const ChatSidebar = ({ chats, activeUser, onSelectChat, refreshChats, act
                       <Avatar className="w-9 h-9 border border-gray-100">
                         <AvatarFallback className="bg-gray-100 text-xs text-gray-500 font-bold">{user.username[0].toUpperCase()}</AvatarFallback>
                       </Avatar>
+                      {/* <RemoteAvatar 
+                        link={user.pfpLink || undefined} 
+                        initial={user.username[0].toUpperCase()} 
+                        className="w-9 h-9 border border-gray-100"
+                      /> */}
                       <span className="text-sm text-gray-700 font-bold group-hover:text-[#2D6BA3] transition-colors">{user.username}</span>
                     </div>
                     <UserPlus className="w-4 h-4 text-gray-400 group-hover:text-[#348F96] transition-all" />
@@ -218,11 +226,11 @@ export const ChatSidebar = ({ chats, activeUser, onSelectChat, refreshChats, act
                     : "hover:bg-gray-50 border-transparent hover:border-gray-100"
                 }`}
               >
-                <Avatar className={`w-11 h-11 border transition-colors ${isActive ? "border-white/30" : "border-gray-200"}`}>
-                  <AvatarFallback className={`uppercase font-bold transition-colors ${isActive ? "bg-white/20 text-white" : "bg-gray-100 text-gray-400"}`}>
-                    { chatDisplayName[0] }
-                  </AvatarFallback>
-                </Avatar>
+                <RemoteAvatar 
+                  link={chatMember?.pfpLink || undefined} 
+                  initial={chatDisplayName[0]} 
+                  className={`w-11 h-11 border transition-colors ${isActive ? "border-white/30" : "border-gray-200"}`}
+                />
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-bold truncate transition-colors ${isActive ? "text-white" : "text-gray-900"}`}>
                     { chatDisplayName }
