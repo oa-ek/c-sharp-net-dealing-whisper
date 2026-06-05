@@ -13,6 +13,7 @@ import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import agent from "../../../api/agent";
 import { db } from "../../../api/db";
 import { SecureAttachment } from "../components/SecureAttachments";
+import { RemoteAvatar } from "./RemoteAvatar";
 
 interface ChatWindowProps {
   activeChat: ChatDto;
@@ -170,9 +171,16 @@ return (
       {/* Header */}
       <div className="h-16 flex-none border-b border-gray-100 flex items-center justify-between px-6 bg-white z-10 shadow-sm">
         <div className="flex items-center gap-3 cursor-pointer group" onClick={onShowInfo}>
-          <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 font-black uppercase border border-gray-100 group-hover:border-[#348F96] transition-all duration-300">
-            {chatDisplayName ? chatDisplayName[0] : "?" }
-          </div>
+          {(() => {
+            const partner = activeChatMembers?.find((m) => m.id != currentUserId);
+            return (
+              <RemoteAvatar 
+                link={partner?.pfpLink || undefined} 
+                initial={chatDisplayName ? chatDisplayName[0] : "?"} 
+                className="w-10 h-10 border border-gray-100 group-hover:border-[#348F96] transition-all duration-300"
+              />
+            );
+          })()}
           <div>
             <span className="text-[#111] font-bold block transition-colors group-hover:text-[#2D6BA3]">
               { chatDisplayName }
@@ -293,7 +301,7 @@ return (
         )}
 
         <div className="max-w-3xl mx-auto w-full flex gap-1 items-center bg-gray-50 p-1.5 rounded-2xl border border-gray-200 focus-within:border-[#348F96]/40 focus-within:ring-4 focus-within:ring-[#348F96]/5 transition-all duration-300">
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple />
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" style={{ display: 'none' }} multiple />
           <Button onClick={() => !isUploading && fileInputRef.current?.click()} variant="ghost" size="icon" className="text-gray-400 hover:text-[#348F96] rounded-xl transition-colors" disabled={isUploading}>
             {isUploading ? <Loader2 className="w-5 h-5 animate-spin text-[#348F96]" /> : <Paperclip className="w-5 h-5" />}
           </Button>
