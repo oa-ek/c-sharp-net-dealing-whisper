@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { SendHorizonal, Info, Paperclip, Smile, SquarePlay, Trash } from "lucide-react";
+import { SendHorizonal, Info, Paperclip, Smile, SquarePlay, Trash, FileText, Loader2, X} from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { ScrollArea } from "../../../components/ui/scroll-area";
@@ -12,12 +12,13 @@ import type { UserDto } from "../../../types/user";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import agent from "../../../api/agent";
 import { db } from "../../../api/db";
+import { SecureAttachment } from "../components/SecureAttachments";
 
 interface ChatWindowProps {
   activeChat: ChatDto;
   onShowInfo: () => void;
   messages: any[]; 
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, attachments?: any[]) => void;
   onChatRemoval: () => void;
   currentUserId: string | null;
   isPartnerTyping: boolean; 
@@ -31,6 +32,17 @@ const mediaFileExtensions = [
   '.jpeg',
   '.webp',
 ]
+
+const mapAttachmentsForSignalR = (attachments: any[]) => {
+  return attachments.map(f => {
+    const id = f?.attachmentId || f?.AttachmentId || f?.id || f?.Id || f?._id;
+    return {
+      attachmentId: id, name: f?.name || f?.Name, url: f?.url || f?.Url, contentType: f?.contentType || f?.ContentType, size: f?.size || f?.Size,
+      AttachmentId: id, Name: f?.name || f?.Name, Url: f?.url || f?.Url, ContentType: f?.contentType || f?.ContentType, Size: f?.size || f?.Size
+    };
+  });
+};
+
 const renderMessageWithCards = (text: string) => {
   const cardRegex = /(\b\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}\b)/g;
   
@@ -64,8 +76,12 @@ export const ChatWindow = ({
   const [chatDisplayName, setChatDisplayName] = useState<string>();
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false)
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingAttachments, setPendingAttachments] = useState<any[]>([]);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+
   useEffect(() => {
-    if (!activeChat.id || !inputText.trim()) {
+    if (!activeChat.id || (!inputText.trim() && pendingAttachments.length === 0)) {
       if (isLocalTyping) {
         chatSocketService.stopTyping(activeChat.id);
         setIsLocalTyping(false);
@@ -84,7 +100,7 @@ export const ChatWindow = ({
     }, 3000);
 
     return () => clearTimeout(timeout);
-  }, [inputText, activeChat.id]);
+  }, [inputText, pendingAttachments, activeChat.id]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -100,11 +116,31 @@ export const ChatWindow = ({
   }, [messages, isPartnerTyping]); 
 
   const handleSend = () => {
-    if (!inputText.trim()) return;
-    onSendMessage(inputText);
+    if (!inputText.trim() && pendingAttachments.length === 0) return;
+    onSendMessage(inputText.trim(), mapAttachmentsForSignalR(pendingAttachments));
     setInputText("");
+    setPendingAttachments([]);
     if (activeChat.id) chatSocketService.stopTyping(activeChat.id);
     setIsLocalTyping(false);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIsUploading(true);
+    try {
+      const uploadedFiles: any[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const response = await agent.Media.upload(files[i]);
+        const fileData = response.data || response;
+        uploadedFiles.push(fileData);
+      }
+      setPendingAttachments((prev) => [...prev, ...uploadedFiles]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (err) {
+      console.error("Помилка завантаження файлу:", err);
+      alert("Не вдалося завантажити медіа файл.");
+    } finally { setIsUploading(false); }
   };
 
   useEffect(() => {
@@ -128,7 +164,7 @@ export const ChatWindow = ({
     );
   }
 
-  return (
+return (
     <div className="flex-1 flex flex-col bg-[#f9fafb] h-full overflow-hidden">
 
       {/* Header */}
@@ -178,6 +214,12 @@ export const ChatWindow = ({
           <div className="p-6 space-y-4 max-w-3xl mx-auto">
             {messages.map((msg: any) => {
                 const isMine = msg.senderId === currentUserId;
+                const attachmentsList = msg.attachments || msg.Attachments;
+                const hasAttachments = attachmentsList && attachmentsList.length > 0;
+                
+                const isTextEmptyOrPlaceholder = !msg.ciphertext || msg.ciphertext === "..." || msg.ciphertext.startsWith("#Init");
+                const shouldRenderTextBubble = !isTextEmptyOrPlaceholder || (!hasAttachments && !msg.ciphertext?.startsWith("#Init"));
+
                 return (
                   <div 
                     key={msg.id} 
@@ -188,19 +230,30 @@ export const ChatWindow = ({
                         ? "bg-linear-[135deg] from-[#64B59D] via-[#348F96] to-[#2D6BA3] text-white rounded-tr-none font-medium shadow-blue-900/5" 
                         : "bg-white border border-gray-100 text-[#222] rounded-tl-none"
                     }`}>
-                      <div>
-                        {
-                      mediaFileExtensions.some(e => msg.ciphertext.endsWith(e)) ? ( 
-                      <img src={msg.ciphertext} className="max-w-md h-auto"/>
-                        ) : (
-                        <p className="leading-relaxed whitespace-pre-wrap break-words">
-                        {renderMessageWithCards(msg.ciphertext)}
-                      </p>
-                        )
-                      }
-                      </div>
+                      {shouldRenderTextBubble && (
+                        <div>
+                          {mediaFileExtensions.some(e => msg.ciphertext.endsWith(e)) && !hasAttachments ? ( 
+                            <img src={msg.ciphertext} className="max-w-md h-auto rounded-lg shadow-sm"/>
+                          ) : (
+                            <p className="leading-relaxed whitespace-pre-wrap break-words">
+                              {renderMessageWithCards(msg.ciphertext)}
+                            </p>
+                          )}
+                        </div>
+                      )}
 
-                      
+                      {hasAttachments && (
+                        <div className={`${shouldRenderTextBubble ? 'mt-2' : ''} space-y-2 flex flex-col`}>
+                          {attachmentsList.map((file: any, index: number) => (
+                            <SecureAttachment 
+                              key={file?.attachmentId || file?.AttachmentId || file?._id || index} 
+                              file={file} 
+                              isMine={isMine} 
+                            />
+                          ))}
+                        </div>
+                      )}
+
                       <div className={`text-[9px] mt-1.5 font-bold uppercase tracking-tighter text-right opacity-60 ${isMine ? "text-white" : "text-gray-400"}`}>
                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
@@ -224,17 +277,33 @@ export const ChatWindow = ({
       </div>
 
       {/* Input Area */}
-      <div className="flex-none p-4 bg-white border-t border-gray-100">
-        <div className="max-w-3xl mx-auto flex gap-1 items-center bg-gray-50 p-1.5 rounded-2xl border border-gray-200 focus-within:border-[#348F96]/40 focus-within:ring-4 focus-within:ring-[#348F96]/5 transition-all duration-300">
-          <Button variant="ghost" size="icon" className="text-gray-400 hover:text-[#348F96] rounded-xl transition-colors">
-            <Paperclip className="w-5 h-5" />
+      <div className="flex-none p-4 bg-white border-t border-gray-100 flex flex-col gap-2">
+        {pendingAttachments.length > 0 && (
+          <div className="max-w-3xl mx-auto w-full flex flex-wrap gap-2 p-2 bg-gray-50 rounded-xl border border-gray-200 max-h-24 overflow-y-auto">
+            {pendingAttachments.map((file, idx) => (
+              <div key={idx} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 text-gray-700 rounded-lg text-xs font-bold shadow-sm">
+                <FileText className="w-3.5 h-3.5 text-[#348F96]" />
+                <span className="truncate max-w-[120px]">{file?.name || file?.Name || "Файл"}</span>
+                <button onClick={() => setPendingAttachments(prev => prev.filter((_, i) => i !== idx))} className="p-0.5 hover:bg-red-50 rounded text-gray-400 hover:text-red-500 transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="max-w-3xl mx-auto w-full flex gap-1 items-center bg-gray-50 p-1.5 rounded-2xl border border-gray-200 focus-within:border-[#348F96]/40 focus-within:ring-4 focus-within:ring-[#348F96]/5 transition-all duration-300">
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple />
+          <Button onClick={() => !isUploading && fileInputRef.current?.click()} variant="ghost" size="icon" className="text-gray-400 hover:text-[#348F96] rounded-xl transition-colors" disabled={isUploading}>
+            {isUploading ? <Loader2 className="w-5 h-5 animate-spin text-[#348F96]" /> : <Paperclip className="w-5 h-5" />}
           </Button>
           <Input 
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             className="border-none bg-transparent focus-visible:ring-0 text-[#111] placeholder:text-gray-400 font-medium" 
-            placeholder="Напишіть повідомлення..." 
+            placeholder={isUploading ? "Медіа завантажується..." : "Напишіть повідомлення..."} 
+            disabled={isUploading}
           />
           <Button onClick={() => {setIsGifsModalOpen(!isGifsModalOpen); setIsEmojiModalOpen(false); }} variant="ghost" size="icon" className="text-gray-400 hover:text-[#348F96] rounded-xl transition-colors -mr-2">
             <SquarePlay className="w-5 h-5" />
@@ -268,7 +337,7 @@ export const ChatWindow = ({
             </div>
           <Button 
             onClick={handleSend}
-            disabled={!inputText.trim()}
+            disabled={(!inputText.trim() && pendingAttachments.length === 0) || isUploading}
             size="icon" 
             className="rounded-xl bg-gradient-to-r from-[#64B59D] via-[#348F96] to-[#2D6BA3] hover:opacity-90 disabled:from-gray-200 disabled:to-gray-300 disabled:text-gray-400 text-white w-10 h-10 shadow-md active:scale-95 transition-all duration-300 border-none"
           >
