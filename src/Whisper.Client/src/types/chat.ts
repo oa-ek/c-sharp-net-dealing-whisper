@@ -13,6 +13,13 @@ export interface MessageCreateDto {
     attachments: any[]; 
 }
 
+export interface MessageUpdateDto {
+    id: string;
+    ciphertext: string;
+    wrappedKey: string;
+    attachments: any[];
+}
+
 export interface MessageDto {
     id: string;
     chatId: string;

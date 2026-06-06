@@ -11,18 +11,36 @@ namespace Whisper.Persistence.Repositories
 
         public async Task<Message> EditAsync(Message message)
         {
+            var options = new FindOneAndUpdateOptions<Message>
+            {
+                ReturnDocument = ReturnDocument.After
+            };
             var update = Builders<Message>.Update
                 .Set(m => m.Ciphertext, message.Ciphertext)
                 .Set(m => m.WrappedKey, message.WrappedKey)
                 .Set(m => m.Attachments, message.Attachments);
-            return await _collection.FindOneAndUpdateAsync(Builders<Message>.Filter.Eq("Id", message.Id), update);
+            return await _collection.FindOneAndUpdateAsync(Builders<Message>.Filter.Eq("Id", message.Id), update, options);
+        }
+
+        public override async Task<Message?> Remove(Guid id)
+        {
+            var message = await GetByIdAsync(id);
+            if (message != null)
+            {
+                await base.Remove(id);
+            }
+            return message;
         }
 
         public async Task<Message> EditDeliveryStatusAsync(Guid messageId, DeliveryStatus deliveryStatus)
         {
+            var options = new FindOneAndUpdateOptions<Message>
+            {
+                ReturnDocument = ReturnDocument.After
+            };
             var update = Builders<Message>.Update
                 .Set(m => m.DeliveryStatus, deliveryStatus);
-            return await _collection.FindOneAndUpdateAsync(Builders<Message>.Filter.Eq("Id", messageId), update);
+            return await _collection.FindOneAndUpdateAsync(Builders<Message>.Filter.Eq("Id", messageId), update, options);
         }
 
         public async Task<IEnumerable<Message>> GetLimitedAsync(string chatId, int limit, int offset)

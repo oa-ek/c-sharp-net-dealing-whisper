@@ -39,13 +39,16 @@ namespace Whisper.Application.Services
             return newMessage;
         }
 
-        public async Task<MessageDto> EditAsync(string userId, MessageUpdateDto message)
+        public async Task<MessageDto> EditAsync(string userId, MessageUpdateDto editedMessage)
         {
-            var chat = await _messageRepository.GetByIdAsync(Guid.Parse(message.Id));
-            if (chat == null)
-                throw new Exception("The message is broken and doesn't belong to any chat. Crazy.");
+            var message = await _messageRepository.GetByIdAsync(Guid.Parse(editedMessage.Id));
+            if (message == null)
+                throw new Exception("The message does not exist");
 
-            var chatParticipants = (await _chatRepository.GetParticipants(chat.Id))
+            if (message.SenderId.ToString() != userId)
+                throw new Exception("The user doesn't own the message. Only the message author can edit it");
+
+            var chatParticipants = (await _chatRepository.GetParticipants(message.ChatId))
                 .Select(p => p.Id)
                 .ToList();
             if (chatParticipants == null)
@@ -54,18 +57,41 @@ namespace Whisper.Application.Services
             if (!chatParticipants.Contains(Guid.Parse(userId)))
                 throw new Exception("User doesn't participate in that chat");
 
-            var updatedMessage = await _messageRepository.EditAsync(_mapper.Map<Message>(message));
+            var updatedMessage = await _messageRepository.EditAsync(_mapper.Map<Message>(editedMessage));
             await _messageRepository.SaveAsync();
             return _mapper.Map<MessageDto>(updatedMessage);
         }
 
+        public async Task<MessageDto> RemoveAsync(string userId, string messageId)
+        {
+            var message = await _messageRepository.GetByIdAsync(Guid.Parse(messageId));
+            if (message == null)
+                throw new Exception("The message does not exist");
+
+            if (message.SenderId.ToString() != userId)
+                throw new Exception("The user doesn't own the message. Only the message author can remove it");
+
+            var chatParticipants = (await _chatRepository.GetParticipants(message.ChatId))
+                .Select(p => p.Id)
+                .ToList();
+            if (chatParticipants == null)
+                throw new Exception("Chat was not found");
+
+            if (!chatParticipants.Contains(Guid.Parse(userId)))
+                throw new Exception("User doesn't participate in that chat");
+
+            var removedMessage = await _messageRepository.Remove(Guid.Parse(messageId));
+            await _messageRepository.SaveAsync();
+            return _mapper.Map<MessageDto>(removedMessage);
+        }
+
         public async Task<MessageDto> MarkReadAsync(string userId, string messageId)
         {
-            var chat = await _messageRepository.GetByIdAsync(Guid.Parse(messageId));
-            if (chat == null)
-                throw new Exception("The message is broken and doesn't belong to any chat. Crazy.");
+            var message = await _messageRepository.GetByIdAsync(Guid.Parse(messageId));
+            if (message == null)
+                throw new Exception("The message does not exist");
 
-            var chatParticipants = (await _chatRepository.GetParticipants(chat.Id))
+            var chatParticipants = (await _chatRepository.GetParticipants(message.ChatId))
                 .Select(p => p.Id)
                 .ToList();
             if (chatParticipants == null)
