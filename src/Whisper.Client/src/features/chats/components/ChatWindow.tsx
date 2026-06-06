@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { SendHorizonal, Info, Paperclip, Smile, SquarePlay, Trash, FileText, Loader2, X, Edit} from "lucide-react";
+import { SendHorizonal, Info, Paperclip, Smile, SquarePlay, Trash, FileText, Loader2, X, Edit, Reply} from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { ScrollArea } from "../../../components/ui/scroll-area";
@@ -20,7 +20,7 @@ interface ChatWindowProps {
   onShowInfo: () => void;
   messages: MessageDto[]; 
   decryptedMessages: Record<string, string>;
-  onSendMessage: (content: string, attachments?: any[]) => void;
+  onSendMessage: (content: string, parentMessage: string | null, attachments?: any[]) => void;
   onMessageEdit: (id: string, message: string, attachments?: any[]) => void;
   onMessageRemove: (id: string) => void;
   onChatRemoval: () => void;
@@ -83,10 +83,13 @@ export const ChatWindow = ({
   const [chatDisplayName, setChatDisplayName] = useState<string>();
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false)
   const [editedMessageId, setEditedMessageId] = useState<string | null>(null);
+  const [replyingMessageId, setReplyingMessageId] = useState<string | null>(null);
+
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingAttachments, setPendingAttachments] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const MessageInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!activeChat.id || (!inputText.trim() && pendingAttachments.length === 0)) {
@@ -131,11 +134,18 @@ export const ChatWindow = ({
       setInputText("");
       return;
     }
-    onSendMessage(inputText.trim(), mapAttachmentsForSignalR(pendingAttachments));
+    onSendMessage(inputText.trim(), replyingMessageId, mapAttachmentsForSignalR(pendingAttachments));
+    if (replyingMessageId) setReplyingMessageId(null);
     setInputText("");
     setPendingAttachments([]);
     if (activeChat.id) chatSocketService.stopTyping(activeChat.id);
     setIsLocalTyping(false);
+  };
+
+  const handleReply = (messageId: string) => {
+    setReplyingMessageId(messageId);
+    if (MessageInput.current)
+    MessageInput.current.focus();
   };
 
   const handleEdit = (message: MessageDto, plainText: string) => {
@@ -248,32 +258,47 @@ return (
                 const plainText = decryptedMessages[msg.id];
                 const attachmentsList = msg.attachments;
                 const hasAttachments = attachmentsList && attachmentsList.length > 0;
-                
+                const parentMessage = messages.find(m => m.id === msg.parentMessageId);
+                const parentMessagePlainText = parentMessage ? decryptedMessages[parentMessage.id] : "?";
+                const parentMessageOwner = activeChatMembers?.find(m => m.id === parentMessage?.senderId);
+
                 const isTextEmptyOrPlaceholder = !plainText || plainText === "..." || plainText.startsWith("#Init");
                 const shouldRenderTextBubble = !isTextEmptyOrPlaceholder || (!hasAttachments && !plainText?.startsWith("#Init"));
 
                 return (
                   <div 
                     key={msg.id} 
-                    className={`flex ${isMine ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                    className={
+                      `${isMine ? "justify-end" : "justify-start"} 
+                      ${replyingMessageId === msg.id ? 
+                        !isMine ? 
+                          "bg-gray-200 rounded-md pl-2 py-[6px]" : 
+                          "bg-gray-200 rounded-md pr-2 py-[6px]" : ""
+                        } flex animate-in fade-in slide-in-from-bottom-2 duration-300`}
                   > 
                     <div className={`group relative p-4 rounded-2xl max-w-[80%] text-sm shadow-sm ${
                       isMine 
                         ? "bg-linear-[135deg] from-[#64B59D] via-[#348F96] to-[#2D6BA3] text-white rounded-tr-none font-medium shadow-blue-900/5" 
                         : "bg-white border border-gray-100 text-[#222] rounded-tl-none"
                     }`}>
-                      { isMine && (
+                      { isMine ? (
                       <div className="absolute hidden group-hover:inline -top-9 right-0 h-10 pb-2">
                         <div className="h-full p-[1px] text-black bg-linear-[135deg] from-[#64B59D] via-[#348F96] to-[#2D6BA3] overflow-hidden rounded-md">
-                          <div className="flex justify-left bg-white rounded-[7px] h-full p-[2px]">
+                          <div className="flex justify-left bg-white rounded-[7px] h-full p-[1.5px]">
                             <Button variant="ghost" size="icon" 
-                              className="h-full w-7 hover:bg-gray-300/50" 
+                              className="h-full w-7 hover:bg-gray-300/50 rounded-sm" 
+                              onClick={() => handleReply(msg.id)}
+                              >
+                              <Reply className="w-5 h-5"/>
+                            </Button>
+                            <Button variant="ghost" size="icon" 
+                              className="h-full w-7 hover:bg-gray-300/50 rounded-sm" 
                               onClick={() => handleEdit(msg, plainText)}
                               >
                               <Edit className="w-5 h-5"/>
                             </Button>
                             <Button variant="ghost" size="icon" 
-                              className="h-full w-7 text-red-800 hover:text-red-800 hover:bg-red-300/30"
+                              className="h-full w-7 text-red-800 hover:text-red-800 hover:bg-red-300/30 rounded-sm"
                               onClick={() => handleRemove(msg.id)}
                               >
                               <Trash className="w-5 h-5" />
@@ -281,6 +306,29 @@ return (
                           </div>
                         </div>
                       </div>
+                      ) : (
+                        <div className="absolute hidden group-hover:inline -top-9 left-0 h-10 w-16 pr-[31px] pb-2">
+                          <div className="h-full p-[1px] text-black bg-gray-300 overflow-hidden rounded-md">
+                            <div className="flex justify-left bg-white rounded-[7px] h-full p-[1.5px]">
+                              <Button variant="ghost" size="icon" 
+                                className="h-full w-7 hover:bg-gray-300/50 rounded-sm" 
+                                onClick={() => handleReply(msg.id)}
+                                >
+                                <Reply className="w-5 h-5"/>
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    } 
+                    {
+                      msg.parentMessageId && msg.parentMessageId !== "00000000-0000-0000-0000-000000000000" && (
+                        <div className="">
+                          <p
+                            className="text-[13px]"
+                            >↪ @{parentMessageOwner?.displayName || parentMessageOwner?.username} - {parentMessagePlainText?.length > 80 ? parentMessagePlainText.substring(0, 77) + "..." : parentMessagePlainText}</p>
+                          <hr className="my-1"/>
+                        </div>
                       )
                     } 
                       {shouldRenderTextBubble && (
@@ -351,9 +399,10 @@ return (
             {isUploading ? <Loader2 className="w-5 h-5 animate-spin text-[#348F96]" /> : <Paperclip className="w-5 h-5" />}
           </Button>
           <Input 
+            ref={MessageInput}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            onKeyDown={(e) => e.key === "Enter" && handleSend() || e.key === "Escape" && setReplyingMessageId(null)}
             className="border-none bg-transparent focus-visible:ring-0 text-[#111] placeholder:text-gray-400 font-medium" 
             placeholder={isUploading ? "Медіа завантажується..." : "Напишіть повідомлення..."} 
             disabled={isUploading}
@@ -368,7 +417,7 @@ return (
                 onSelect={(gifLink: string) => {
                   setIsGifsModalOpen(false);
                   if (gifLink.length !== 0 && gifLink.endsWith(".gif"))
-                  onSendMessage(gifLink);
+                  onSendMessage(gifLink, null);
                   handleSend();
                 }} 
                 />

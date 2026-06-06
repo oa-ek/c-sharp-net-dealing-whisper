@@ -213,7 +213,7 @@ export const ChatsPageFeature = () => {
     loadData();
   }, [selectedChatId, decryptBatch, loadChats]);
 
-  const handleSendMessage = async (content: string, attachments: any[] = []) => {
+  const handleSendMessage = async (content: string, parentMessageId?: string | null, attachments: any[] = []) => {
   if (!selectedChatId) return;
   try {
     const sharedKey = await getChatSharedKey(selectedChatId);
@@ -227,7 +227,8 @@ export const ChatsPageFeature = () => {
       chatId: selectedChatId, 
       ciphertext, 
       wrappedKey, 
-      attachments: attachments 
+      attachments: attachments,
+      parentMessageId: parentMessageId || null
     });
     } catch (err) { console.error("Помилка відправки:", err); }
   };
