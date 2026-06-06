@@ -1,8 +1,47 @@
 services:
+  whisper-backend:
+    image: whisper-backend:latest
+    build:
+      context: ./src/Whisper.Server
+      dockerfile: Dockerfile
+    container_name: whisper-backend
+    restart: unless-stopped
+    ports:
+      - "5055:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ConnectionStrings__PostgresConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - ConnectionStrings__MongoConnection=mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/?authSource=admin
+      - Jwt__Key=${BE_JWT_KEY}
+      - Smtp__Username=${BE_SMTP_USERNAME}
+      - Smtp__Password=${BE_SMTP_PASSWORD}
+      - EmojiApi__ApiKey=${BE_EMOJI_API_KEY}
+      - KlipyApi__ApiKey=${BE_KLIPY_API_KEY}
+      - MinioSettings__Endpoint=minio:9000
+      - MinioSettings__AccessKey=${MINIO_ROOT_USER}
+      - MinioSettings__SecretKey=${MINIO_ROOT_PASSWORD}
+    depends_on:
+      - postgres
+      - mongodb
+      - minio
+
+  whisper-frontend:
+    image: whisper-frontend:latest
+    build:
+      context: ./src/Whisper.Client
+      dockerfile: Dockerfile
+    container_name: whisper-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - whisper-backend
+
   postgres:
     image: postgres:16-alpine
     container_name: whisper-postgres
-    restart: no
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -15,7 +54,7 @@ services:
   mongodb:
     image: mongo:7.0
     container_name: whisper-mongodb
-    restart: no
+    restart: unless-stopped
     mem_limit: 1024m 
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
@@ -32,7 +71,7 @@ services:
   minio:
     image: minio/minio:latest
     container_name: whisper-minio
-    restart: no
+    restart: unless-stopped
     command: server /data --address ":9000" --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}

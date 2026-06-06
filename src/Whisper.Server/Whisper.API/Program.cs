@@ -171,7 +171,9 @@ builder.Services.AddCors(options =>
                 "https://fedora.tailfdec14.ts.net:5173",
                 "https://localhost:5173",
                 "https://whisper-secure.space:5173",
-                "https://whisper-secure.space"
+                "https://whisper-secure.space",
+                "http://localhost:5173",
+                "http://localhost"
                 )
                 .AllowAnyHeader()
                 .AllowAnyMethod()
