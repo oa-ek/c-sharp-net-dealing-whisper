@@ -15,6 +15,9 @@ import { db } from "../../../api/db";
 import { SecureAttachment } from "../components/SecureAttachments";
 import { RemoteAvatar } from "./RemoteAvatar";
 
+import { MarkdownRenderer } from "./MarkdownRenderer";
+import { MarkdownInput } from "./MarkdownInput";
+
 interface ChatWindowProps {
   activeChat: ChatDto;
   onShowInfo: () => void;
@@ -89,7 +92,7 @@ export const ChatWindow = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingAttachments, setPendingAttachments] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const MessageInput = useRef<HTMLInputElement>(null);
+  const MessageInput = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (!activeChat.id || (!inputText.trim() && pendingAttachments.length === 0)) {
@@ -197,6 +200,18 @@ export const ChatWindow = ({
       </div>
     );
   }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault(); 
+    handleSend();
+  } else if (e.key === "Escape") {
+    e.preventDefault();
+    setReplyingMessageId(null);
+    setEditedMessageId(null);
+    setInputText("");
+  }
+};
 
 return (
     <div className="flex-1 flex flex-col bg-[#f9fafb] h-full overflow-hidden">
@@ -336,9 +351,7 @@ return (
                           {mediaFileExtensions.some(e => plainText?.endsWith(e)) && !hasAttachments ? ( 
                             <img src={plainText} className="max-w-md h-auto rounded-lg shadow-sm"/>
                           ) : (
-                            <p className="leading-relaxed whitespace-pre-wrap break-words">
-                              {renderMessageWithCards(plainText)}
-                            </p>
+                            <MarkdownRenderer content={plainText} isMine={isMine} />
                           )}
                         </div>
                       )}
@@ -398,12 +411,11 @@ return (
           <Button onClick={() => !isUploading && fileInputRef.current?.click()} variant="ghost" size="icon" className="text-gray-400 hover:text-[#348F96] rounded-xl transition-colors" disabled={isUploading}>
             {isUploading ? <Loader2 className="w-5 h-5 animate-spin text-[#348F96]" /> : <Paperclip className="w-5 h-5" />}
           </Button>
-          <Input 
+          <MarkdownInput 
             ref={MessageInput}
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend() || e.key === "Escape" && setReplyingMessageId(null)}
-            className="border-none bg-transparent focus-visible:ring-0 text-[#111] placeholder:text-gray-400 font-medium" 
+            onChange={setInputText}
+            onKeyDown={handleKeyDown}
             placeholder={isUploading ? "Медіа завантажується..." : "Напишіть повідомлення..."} 
             disabled={isUploading}
           />
