@@ -418,7 +418,6 @@ FodyWeavers.xsd
 *.msp
 
 # other files to ignore
-appsettings.json
 appsettings.*.json
 
 mongo-data
