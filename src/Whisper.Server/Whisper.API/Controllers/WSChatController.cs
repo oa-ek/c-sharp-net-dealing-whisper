@@ -58,6 +58,17 @@ namespace Whisper.API.Controllers
             }
         }
 
+        public async Task MessageRemove(string messageId)
+        {
+            if (string.IsNullOrEmpty(UserId)) throw new HubException("Unauthorized");
+
+            var resultMessage = await _messageService.RemoveAsync(UserId, messageId);
+            if (resultMessage != null)
+            {
+                await Clients.Group($"chat-{resultMessage.ChatId}").SendAsync("message-removed", resultMessage);
+            }
+        }
+
         // Adds reaction to the a message, saves to db and returns message with new reaction
         public async Task ReactionAdd(ReactionCreateDto reaction)
         {

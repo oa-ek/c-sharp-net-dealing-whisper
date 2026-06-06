@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { SendHorizonal, Info, Paperclip, Smile, SquarePlay, Trash, FileText, Loader2, X} from "lucide-react";
+import { SendHorizonal, Info, Paperclip, Smile, SquarePlay, Trash, FileText, Loader2, X, Edit} from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { ScrollArea } from "../../../components/ui/scroll-area";
@@ -7,7 +7,7 @@ import chatSocketService from "../../../services/ChatSocketService";
 import { EmojiModal } from "./EmojiModal";
 import { CardPreview } from "./CardPreview";
 import { GifsModal } from "./GifsModal";
-import type { ChatDto } from "../../../types/chat";
+import type { ChatDto, MessageDto } from "../../../types/chat";
 import type { UserDto } from "../../../types/user";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import agent from "../../../api/agent";
@@ -17,8 +17,11 @@ import { SecureAttachment } from "../components/SecureAttachments";
 interface ChatWindowProps {
   activeChat: ChatDto;
   onShowInfo: () => void;
-  messages: any[]; 
+  messages: MessageDto[]; 
+  decryptedMessages: Record<string, string>;
   onSendMessage: (content: string, attachments?: any[]) => void;
+  onMessageEdit: (id: string, message: string, attachments?: any[]) => void;
+  onMessageRemove: (id: string) => void;
   onChatRemoval: () => void;
   currentUserId: string | null;
   isPartnerTyping: boolean; 
@@ -62,7 +65,10 @@ export const ChatWindow = ({
   activeChat, 
   onShowInfo, 
   messages, 
+  decryptedMessages,
   onSendMessage,
+  onMessageEdit,
+  onMessageRemove,
   onChatRemoval,
   currentUserId,
   isPartnerTyping,
@@ -75,6 +81,7 @@ export const ChatWindow = ({
   const [isGifsModalOpen, setIsGifsModalOpen] = useState<boolean>(false);
   const [chatDisplayName, setChatDisplayName] = useState<string>();
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false)
+  const [editedMessageId, setEditedMessageId] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingAttachments, setPendingAttachments] = useState<any[]>([]);
@@ -117,12 +124,28 @@ export const ChatWindow = ({
 
   const handleSend = () => {
     if (!inputText.trim() && pendingAttachments.length === 0) return;
+    if (editedMessageId) {
+      onMessageEdit(editedMessageId, inputText.trim(), mapAttachmentsForSignalR(pendingAttachments));
+      setEditedMessageId(null);
+      setInputText("");
+      return;
+    }
     onSendMessage(inputText.trim(), mapAttachmentsForSignalR(pendingAttachments));
     setInputText("");
     setPendingAttachments([]);
     if (activeChat.id) chatSocketService.stopTyping(activeChat.id);
     setIsLocalTyping(false);
   };
+
+  const handleEdit = (message: MessageDto, plainText: string) => {
+    setEditedMessageId(message.id);
+    setInputText(plainText);
+  };
+
+  const handleRemove = (messageId: string) => {
+    onMessageRemove(messageId);
+    // additional logic or something
+  }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -212,31 +235,53 @@ return (
       <div className="flex-1 min-h-0 relative">
         <ScrollArea ref={scrollRef} className="h-full w-full">
           <div className="p-6 space-y-4 max-w-3xl mx-auto">
-            {messages.map((msg: any) => {
+            {messages.map((msg: MessageDto) => {
                 const isMine = msg.senderId === currentUserId;
-                const attachmentsList = msg.attachments || msg.Attachments;
+                const plainText = decryptedMessages[msg.id];
+                const attachmentsList = msg.attachments;
                 const hasAttachments = attachmentsList && attachmentsList.length > 0;
                 
-                const isTextEmptyOrPlaceholder = !msg.ciphertext || msg.ciphertext === "..." || msg.ciphertext.startsWith("#Init");
-                const shouldRenderTextBubble = !isTextEmptyOrPlaceholder || (!hasAttachments && !msg.ciphertext?.startsWith("#Init"));
+                const isTextEmptyOrPlaceholder = !plainText || plainText === "..." || plainText.startsWith("#Init");
+                const shouldRenderTextBubble = !isTextEmptyOrPlaceholder || (!hasAttachments && !plainText?.startsWith("#Init"));
 
                 return (
                   <div 
                     key={msg.id} 
                     className={`flex ${isMine ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}
-                  >
-                    <div className={`p-4 rounded-2xl max-w-[80%] text-sm shadow-sm ${
+                  > 
+                    <div className={`group relative p-4 rounded-2xl max-w-[80%] text-sm shadow-sm ${
                       isMine 
                         ? "bg-linear-[135deg] from-[#64B59D] via-[#348F96] to-[#2D6BA3] text-white rounded-tr-none font-medium shadow-blue-900/5" 
                         : "bg-white border border-gray-100 text-[#222] rounded-tl-none"
                     }`}>
+                      { isMine && (
+                      <div className="absolute hidden group-hover:inline -top-9 right-0 h-10 pb-2">
+                        <div className="h-full p-[1px] text-black bg-linear-[135deg] from-[#64B59D] via-[#348F96] to-[#2D6BA3] overflow-hidden rounded-md">
+                          <div className="flex justify-left bg-white rounded-[7px] h-full p-[2px]">
+                            <Button variant="ghost" size="icon" 
+                              className="h-full w-7 hover:bg-gray-300/50" 
+                              onClick={() => handleEdit(msg, plainText)}
+                              >
+                              <Edit className="w-5 h-5"/>
+                            </Button>
+                            <Button variant="ghost" size="icon" 
+                              className="h-full w-7 text-red-800 hover:text-red-800 hover:bg-red-300/30"
+                              onClick={() => handleRemove(msg.id)}
+                              >
+                              <Trash className="w-5 h-5" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                      )
+                    } 
                       {shouldRenderTextBubble && (
                         <div>
-                          {mediaFileExtensions.some(e => msg.ciphertext.endsWith(e)) && !hasAttachments ? ( 
-                            <img src={msg.ciphertext} className="max-w-md h-auto rounded-lg shadow-sm"/>
+                          {mediaFileExtensions.some(e => plainText?.endsWith(e)) && !hasAttachments ? ( 
+                            <img src={plainText} className="max-w-md h-auto rounded-lg shadow-sm"/>
                           ) : (
                             <p className="leading-relaxed whitespace-pre-wrap break-words">
-                              {renderMessageWithCards(msg.ciphertext)}
+                              {renderMessageWithCards(plainText)}
                             </p>
                           )}
                         </div>

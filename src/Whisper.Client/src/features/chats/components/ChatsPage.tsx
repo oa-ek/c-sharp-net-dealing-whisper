@@ -138,6 +138,24 @@ export const ChatsPageFeature = () => {
           });
         });
 
+        chatSocketService.onMessageEdited(async (editedMessage: MessageDto) => {
+          const key = await getChatSharedKey(editedMessage.chatId);
+          if (key) {
+            const plainText = await EncryptionService.decryptMessage(editedMessage.ciphertext, editedMessage.wrappedKey, key);
+            setDecryptedMessages(prev => {prev[editedMessage.id] = plainText; return prev;});
+          }
+
+          setMessages((prev) => prev.map((m) => m.id === editedMessage.id ? editedMessage : m));
+        });
+
+        chatSocketService.onMessageRemoved(async (message: MessageDto) => {
+          setDecryptedMessages(prev => {
+            const { [message.id]: _, ...res } = prev;
+            return res;
+          });
+          setMessages(prev => prev.filter(m => m.id !== message.id));
+        });
+
         chatSocketService.onTypingStarted((userId) => {
           const nid = String(userId).toLowerCase();
           if (nid !== currentUserId) setTypingUsers(prev => new Set(prev).add(nid));
@@ -213,7 +231,37 @@ export const ChatsPageFeature = () => {
     });
     } catch (err) { console.error("Помилка відправки:", err); }
   };
-  
+
+  // handles message editing
+  const handleMessageEdit = async (id: string, message: string, attachments?: any[]) => {
+    if (!selectedChatId) return;
+    try {
+      const sharedKey = await getChatSharedKey(selectedChatId);
+      if (!sharedKey) {
+          alert("Канал ще не захищено. Зачекайте ініціалізації.");
+          return;
+      }
+      const { ciphertext, wrappedKey } = await EncryptionService.encryptMessage(message, sharedKey);
+      await chatSocketService.editMessage({
+        id,
+        ciphertext,
+        wrappedKey,
+        attachments: attachments || []
+      });
+    } catch (err) {
+      console.error("Couldn't edit message. Why? \n" + err);
+    }
+  };
+
+  // handle message removal
+  const handleMessageRemove = async (messageId: string) => {
+    if (!selectedChatId) return;
+    try {
+      await chatSocketService.removeMessage(messageId);
+    } catch (err) {
+      console.error("Couldn't remove message. Why? \n" + err);
+    }
+  }
 
   // handles opening of profile info and sets the user for it
   const handleOpenProfile = async () => {
@@ -269,14 +317,14 @@ export const ChatsPageFeature = () => {
         selectedChat ? 
         <ChatWindow 
         activeChat={selectedChat} 
-        messages={messages.map(m => ({ 
-            ...m, 
-            ciphertext: decryptedMessages[m.id] || (m.ciphertext.startsWith("#Init") ? "[System Handshake]" : "...") 
-        }))} 
+        messages={messages}
+        decryptedMessages={decryptedMessages} 
         currentUserId={currentUserId} 
         isPartnerTyping={isPartnerTyping}
-        onShowInfo={handleOpenProfile} 
+        onShowInfo={handleOpenProfile}
         onSendMessage={handleSendMessage}
+        onMessageEdit={handleMessageEdit}
+        onMessageRemove={handleMessageRemove}
         onChatRemoval={handleChatRemoval}
         activeChatMembers={chatMembers ? chatMembers[selectedChat.id] : undefined}
       /> 
