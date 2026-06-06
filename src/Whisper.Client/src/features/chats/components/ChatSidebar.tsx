@@ -93,6 +93,7 @@ export const ChatSidebar = ({ chats, activeUser, onSelectChat, refreshChats, act
           chatId: serverChatId,
           ciphertext: systemContent,
           wrappedKey: "handshake_v1",
+          parentMessageId: null,
           attachments: []
         });
       }
