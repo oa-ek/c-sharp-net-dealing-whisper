@@ -9,7 +9,7 @@ export interface MessageCreateDto {
     chatId: string;
     ciphertext: string;
     wrappedKey: string;
-    parentMessageId?: string;
+    parentMessageId: string | null;
     attachments: any[]; 
 }
 
