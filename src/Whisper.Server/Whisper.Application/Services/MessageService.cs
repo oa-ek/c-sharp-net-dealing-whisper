@@ -32,6 +32,7 @@ namespace Whisper.Application.Services
 
             var parsedMessage = _mapper.Map<Message>(message);
             parsedMessage.SenderId = Guid.Parse(userId);
+            parsedMessage.DeliveryStatus = DeliveryStatus.Delivered;
             var newMessage = _mapper.Map<MessageDto>(
                     await _messageRepository.AddAsync(parsedMessage)
                 );

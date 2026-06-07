@@ -1,17 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import { SendHorizonal, Info, Paperclip, Smile, SquarePlay, Trash, FileText, Loader2, X, Edit, Reply} from "lucide-react";
+import { SendHorizonal, Info, Paperclip, Smile, SquarePlay, Trash, FileText, Loader2, X, Edit, Reply, Check, CheckCheck, Send} from "lucide-react";
 import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 import chatSocketService from "../../../services/ChatSocketService";
 import { EmojiModal } from "./EmojiModal";
 import { CardPreview } from "./CardPreview";
 import { GifsModal } from "./GifsModal";
-import type { ChatDto, MessageDto } from "../../../types/chat";
+import { DeliveryStatus, type ChatDto, type MessageDto } from "../../../types/chat";
 import type { UserDto } from "../../../types/user";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import agent from "../../../api/agent";
-import { db } from "../../../api/db";
 import { SecureAttachment } from "../components/SecureAttachments";
 import { RemoteAvatar } from "./RemoteAvatar";
 
@@ -26,6 +24,7 @@ interface ChatWindowProps {
   onSendMessage: (content: string, parentMessage: string | null, attachments?: any[]) => void;
   onMessageEdit: (id: string, message: string, attachments?: any[]) => void;
   onMessageRemove: (id: string) => void;
+  onMessageRead: (id: string) => void;
   onChatRemoval: () => void;
   currentUserId: string | null;
   isPartnerTyping: boolean; 
@@ -73,6 +72,7 @@ export const ChatWindow = ({
   onSendMessage,
   onMessageEdit,
   onMessageRemove,
+  onMessageRead,
   onChatRemoval,
   currentUserId,
   isPartnerTyping,
@@ -213,6 +213,10 @@ export const ChatWindow = ({
   }
 };
 
+// useEffect(() => {
+//   console.log(messages);
+// }, [messages])
+
 return (
     <div className="flex-1 flex flex-col bg-[#f9fafb] h-full overflow-hidden">
 
@@ -279,6 +283,8 @@ return (
 
                 const isTextEmptyOrPlaceholder = !plainText || plainText === "..." || plainText.startsWith("#Init");
                 const shouldRenderTextBubble = !isTextEmptyOrPlaceholder || (!hasAttachments && !plainText?.startsWith("#Init"));
+                if (!isMine && msg.deliveryStatus != DeliveryStatus.Read)
+                  onMessageRead(msg.id);
 
                 return (
                   <div 
@@ -368,8 +374,17 @@ return (
                         </div>
                       )}
 
-                      <div className={`text-[9px] mt-1.5 font-bold uppercase tracking-tighter text-right opacity-60 ${isMine ? "text-white" : "text-gray-400"}`}>
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <div className="flex justify-end mt-1.5">
+                        {isMine && msg.deliveryStatus == DeliveryStatus.Delivered && (
+                          <Check className="w-3 h-3" />
+                        ) || isMine && msg.deliveryStatus == DeliveryStatus.Read && (
+                          <CheckCheck className="w-3 h-3" />
+                        ) || isMine && (
+                          <Send className="w-3 h-3" />
+                        )}
+                        <div className={`text-[9px] ml-2 font-bold uppercase tracking-tighter text-right opacity-60 ${isMine ? "text-white" : "text-gray-400"}`}>
+                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
                       </div>
                     </div>
                   </div>

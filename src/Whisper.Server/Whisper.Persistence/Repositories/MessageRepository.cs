@@ -43,6 +43,11 @@ namespace Whisper.Persistence.Repositories
             return await _collection.FindOneAndUpdateAsync(Builders<Message>.Filter.Eq("Id", messageId), update, options);
         }
 
+        public async Task<int> CountUnreadMessages(Guid userId, Guid chatId)
+        {
+            return (int)await _collection.CountDocumentsAsync(m => m.ChatId == chatId && m.SenderId != userId && m.DeliveryStatus != DeliveryStatus.Read && m.WrappedKey != "handshake_v1");
+        }
+
         public async Task<IEnumerable<Message>> GetLimitedAsync(string chatId, int limit, int offset)
         {
             return await _collection.Find(m => m.ChatId.ToString() == chatId)

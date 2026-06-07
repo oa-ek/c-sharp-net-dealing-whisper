@@ -220,7 +220,7 @@ export const ChatSidebar = ({ chats, activeUser, onSelectChat, refreshChats, act
             return (
               <div 
                 key={chat.id} 
-                onClick={() => onSelectChat(chat.id)}
+                onClick={() => {onSelectChat(chat.id); chat.unreadMessages = 0}}
                 className={`p-3 rounded-2xl flex items-center gap-3 cursor-pointer transition-all border relative overflow-hidden group ${
                   isActive 
                     ? "bg-linear-[135deg] from-[#64B59D] via-[#348F96] to-[#2D6BA3] border-transparent shadow-lg shadow-blue-900/10 scale-[1.01]" 
@@ -240,9 +240,17 @@ export const ChatSidebar = ({ chats, activeUser, onSelectChat, refreshChats, act
                     {/* E2EE Secure Session */}
                   </p>
                 </div>
-                {isActive && (
-                   <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-white animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
-                )}
+                
+                <div className="flex items-center absolute right-3 gap-2">
+                  {chat.unreadMessages && chat.unreadMessages != 0 && (
+                    <div className={`rounded-full w-7 h-7 text-center pt-1 font-semibold ${isActive ?  "bg-white text-gray-800": "bg-[#348F96] text-white"}`}>
+                      <p className="text-sm">{chat.unreadMessages}</p>
+                    </div>
+                  ) || (<div />)}
+                  {isActive && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                  ) || (<div className="w-1.5"/>)}
+                </div>
               </div>
             );
           })}

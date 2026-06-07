@@ -6,5 +6,6 @@
         public string Name { get; set; }
         public bool IsGroup { get; set; }
         public string CreatedBy { get; set; }
+        public int UnreadMessages { get; set; }
     }
 }
