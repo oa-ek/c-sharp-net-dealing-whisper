@@ -38,6 +38,9 @@ const handleLogin = async (e: React.FormEvent) => {
       deviceId: authData.deviceId
     });
 
+    if (result.success === false)
+      throw new Error("Пристрій не знайдено. Потрібна повторна реєстрація.");
+
     if (!result.accessToken) {
       throw new Error("Сервер не повернув токен.");
     }

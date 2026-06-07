@@ -1,9 +1,30 @@
+export const DeliveryStatus = {
+    Sent: "Sent",
+    Delivered: "Delivered",
+    Read: "Read"
+} as const;
+
+export interface ChatDto {
+    id: string;
+    name: string;
+    isGroup: boolean;
+    createdBy: Date;
+    unreadMessages?: number
+}
+
 export interface MessageCreateDto {
     chatId: string;
     ciphertext: string;
     wrappedKey: string;
-    parentMessageId?: string;
+    parentMessageId: string | null;
     attachments: any[]; 
+}
+
+export interface MessageUpdateDto {
+    id: string;
+    ciphertext: string;
+    wrappedKey: string;
+    attachments: any[];
 }
 
 export interface MessageDto {
@@ -13,6 +34,7 @@ export interface MessageDto {
     ciphertext: string;
     wrappedKey: string;
     parentMessageId?: string;
+    deliveryStatus: string;
     createdAt: string;
     updatedAt: string;
     attachments: any[];

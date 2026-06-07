@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Whisper.Application.DTOs.MessageDTOs;
 using Whisper.Application.DTOs.ReactionDTOs;
 using Whisper.Application.Interfaces.Services;
+using Whisper.Domain.Entities;
 
 namespace Whisper.API.Controllers
 {
@@ -26,12 +27,18 @@ namespace Whisper.API.Controllers
 
         public async Task JoinChat(string chatId)
         {
+            if (string.IsNullOrEmpty(UserId)) throw new HubException("Unauthorized");
             await Groups.AddToGroupAsync(Context.ConnectionId, $"chat-{chatId}");
+
+            await Clients.Group($"chat-{chatId}").SendAsync("user-online", UserId);
         }
 
         public async Task LeaveChat(string chatId)
         {
+            if (string.IsNullOrEmpty(UserId)) throw new HubException("Unauthorized");
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"chat-{chatId}");
+
+            await Clients.Group($"chat-{chatId}").SendAsync("user-offline", UserId);
         }
 
         // Creates message, saves to db and returns new message with id
@@ -43,6 +50,7 @@ namespace Whisper.API.Controllers
             if (resultMessage != null)
             {
                 await Clients.Group($"chat-{message.ChatId}").SendAsync("message-new", resultMessage);
+                await Clients.Group($"chat-{message.ChatId}").SendAsync("message-delivered", resultMessage.Id);
             }
         }
 
@@ -55,6 +63,17 @@ namespace Whisper.API.Controllers
             if (resultMessage != null)
             {
                 await Clients.Group($"chat-{resultMessage.ChatId}").SendAsync("message-edited", resultMessage);
+            }
+        }
+
+        public async Task MessageRemove(string messageId)
+        {
+            if (string.IsNullOrEmpty(UserId)) throw new HubException("Unauthorized");
+
+            var resultMessage = await _messageService.RemoveAsync(UserId, messageId);
+            if (resultMessage != null)
+            {
+                await Clients.Group($"chat-{resultMessage.ChatId}").SendAsync("message-removed", resultMessage);
             }
         }
 
@@ -90,7 +109,7 @@ namespace Whisper.API.Controllers
             var resultMessage = await _messageService.MarkReadAsync(UserId, messageId);
             if (resultMessage != null)
             {
-                await Clients.Group($"chat-{resultMessage.ChatId}").SendAsync("message-read", resultMessage);
+                await Clients.Group($"chat-{resultMessage.ChatId}").SendAsync("message-read", resultMessage.Id);
             }
         }
 
@@ -109,10 +128,9 @@ namespace Whisper.API.Controllers
         }
         public override async Task OnConnectedAsync()
         {
-            var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (userId != null)
+            if (UserId != null)
             {
-                _onlineTracker.TrackConnection(userId, Context.ConnectionId);
+                _onlineTracker.TrackConnection(UserId, Context.ConnectionId);
                 await Clients.Group("Admins").SendAsync("UpdateOnlineCount", _onlineTracker.GetOnlineCount());
             }
             await base.OnConnectedAsync();

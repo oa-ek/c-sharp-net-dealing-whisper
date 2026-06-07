@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useEffectEvent, useState } from "react";
 import agent from "../../../api/agent";
 import { wipeLocalData, clearAuthData } from "../../../api/db";
 import ChatSocketService from "../../../services/ChatSocketService";
@@ -10,7 +10,9 @@ import { Input } from "../../../components/ui/input";
 import { EncryptionService } from "../../../services/encryptionService";
 import { 
   Search, Settings, LogOut, User, UserPlus, 
-  Loader2, MessageSquarePlus, ShieldAlert 
+  Loader2, MessageSquarePlus, ShieldAlert, 
+  InfoIcon,
+  EllipsisVertical
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -22,15 +24,20 @@ import {
 } from "../../../components/ui/dropdown-menu";
 import logo from "@/components/ui/WhisperLogo.ico";
 import { UserProfile } from "../../users/components/UserProfileModal";
+import type { UserDto } from "../../../types/user";
+import type { ChatDto } from "../../../types/chat";
+import {RemoteAvatar} from "./RemoteAvatar";
 
 interface SidebarProps {
-  chats: any[];
+  chats: ChatDto[];
+  activeUser: UserDto | undefined;
   onSelectChat: (id: string) => void;
   refreshChats: () => Promise<void>;
   activeChatId?: string; 
+  chatMembers?: Record<string, UserDto[]>;
 }
 
-export const ChatSidebar = ({ chats, onSelectChat, refreshChats, activeChatId }: SidebarProps) => {
+export const ChatSidebar = ({ chats, activeUser, onSelectChat, refreshChats, activeChatId, chatMembers }: SidebarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -86,6 +93,7 @@ export const ChatSidebar = ({ chats, onSelectChat, refreshChats, activeChatId }:
           chatId: serverChatId,
           ciphertext: systemContent,
           wrappedKey: "handshake_v1",
+          parentMessageId: null,
           attachments: []
         });
       }
@@ -114,9 +122,11 @@ export const ChatSidebar = ({ chats, onSelectChat, refreshChats, activeChatId }:
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100 focus-visible:ring-0 transition-colors">
-              <Avatar className="w-8 h-8 border border-gray-200 shadow-sm">
-                <AvatarFallback className="bg-gray-50 text-[10px] text-gray-500 font-bold">ME</AvatarFallback>
-              </Avatar>
+              <RemoteAvatar 
+                link={activeUser?.pfpLink || undefined} 
+                initial="ME"
+                className="w-8 h-8 border border-gray-200 shadow-sm"
+              />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 bg-white border-gray-200 text-gray-700 shadow-2xl rounded-2xl p-1 animate-in zoom-in-95">
@@ -170,6 +180,11 @@ export const ChatSidebar = ({ chats, onSelectChat, refreshChats, activeChatId }:
                       <Avatar className="w-9 h-9 border border-gray-100">
                         <AvatarFallback className="bg-gray-100 text-xs text-gray-500 font-bold">{user.username[0].toUpperCase()}</AvatarFallback>
                       </Avatar>
+                      {/* <RemoteAvatar 
+                        link={user.pfpLink || undefined} 
+                        initial={user.username[0].toUpperCase()} 
+                        className="w-9 h-9 border border-gray-100"
+                      /> */}
                       <span className="text-sm text-gray-700 font-bold group-hover:text-[#2D6BA3] transition-colors">{user.username}</span>
                     </div>
                     <UserPlus className="w-4 h-4 text-gray-400 group-hover:text-[#348F96] transition-all" />
@@ -193,32 +208,49 @@ export const ChatSidebar = ({ chats, onSelectChat, refreshChats, activeChatId }:
         <div className="space-y-1.5 pb-4">
           {chats.map((chat) => {
             const isActive = activeChatId === chat.id;
+            const chatMember = chatMembers ? chatMembers[chat.id]?.find((member) => member.id != activeUser?.id) : null;
+            const chatDisplayName: string = 
+              chat.isGroup ?
+                chat.name :
+                chatMember ?
+                  chatMember?.displayName ?
+                    chatMember?.displayName :
+                    chatMember?.username :
+                  "?";
             return (
               <div 
                 key={chat.id} 
-                onClick={() => onSelectChat(chat.id)}
+                onClick={() => {onSelectChat(chat.id); chat.unreadMessages = 0}}
                 className={`p-3 rounded-2xl flex items-center gap-3 cursor-pointer transition-all border relative overflow-hidden group ${
                   isActive 
                     ? "bg-linear-[135deg] from-[#64B59D] via-[#348F96] to-[#2D6BA3] border-transparent shadow-lg shadow-blue-900/10 scale-[1.01]" 
                     : "hover:bg-gray-50 border-transparent hover:border-gray-100"
                 }`}
               >
-                <Avatar className={`w-11 h-11 border transition-colors ${isActive ? "border-white/30" : "border-gray-200"}`}>
-                  <AvatarFallback className={`uppercase font-bold transition-colors ${isActive ? "bg-white/20 text-white" : "bg-gray-100 text-gray-400"}`}>
-                    {chat.name ? chat.name[0] : "?"}
-                  </AvatarFallback>
-                </Avatar>
+                <RemoteAvatar 
+                  link={chatMember?.pfpLink || undefined} 
+                  initial={chatDisplayName[0]} 
+                  className={`w-11 h-11 border transition-colors ${isActive ? "border-white/30" : "border-gray-200"}`}
+                />
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-bold truncate transition-colors ${isActive ? "text-white" : "text-gray-900"}`}>
-                    {chat.name}
+                    { chatDisplayName }
                   </p>
                   <p className={`text-[11px] font-medium truncate transition-colors ${isActive ? "text-white/80" : "text-gray-400"}`}>
                     {/* E2EE Secure Session */}
                   </p>
                 </div>
-                {isActive && (
-                   <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-white animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
-                )}
+                
+                <div className="flex items-center absolute right-3 gap-2">
+                  {chat.unreadMessages && chat.unreadMessages != 0 && (
+                    <div className={`rounded-full w-7 h-7 text-center pt-1 font-semibold ${isActive ?  "bg-white text-gray-800": "bg-[#348F96] text-white"}`}>
+                      <p className="text-sm">{chat.unreadMessages}</p>
+                    </div>
+                  ) || (<div />)}
+                  {isActive && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                  ) || (<div className="w-1.5"/>)}
+                </div>
               </div>
             );
           })}

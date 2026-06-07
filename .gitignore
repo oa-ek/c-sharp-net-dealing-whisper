@@ -418,8 +418,13 @@ FodyWeavers.xsd
 *.msp
 
 # other files to ignore
-appsettings.json
+appsettings.*.json
 
 mongo-data
+minio-data
 
-.env*
+.env
+.env.development
+.env.production
+
+.VSCodeCounter

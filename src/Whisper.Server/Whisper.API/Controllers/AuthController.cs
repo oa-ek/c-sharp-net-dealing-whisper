@@ -46,7 +46,7 @@ namespace Whisper.Server.Controllers
             }
             catch (Exception ex)
             {
-                return Unauthorized(new { message = ex.Message });
+                return Unauthorized(new { success = false, message = ex.Message });
             }
         }
         [Authorize]

@@ -24,7 +24,12 @@ namespace Whisper.Application.Services
         public async Task<IEnumerable<ChatDto>> GetAllAsync(string userId)
         {
             var chats = await _chatRepository.GetListAsync(Guid.Parse(userId));
-            return chats.Select(c => _mapper.Map<ChatDto>(c)).ToList() ;
+            var resultChats = chats.Select(c => _mapper.Map<ChatDto>(c)).ToList();
+            for (int i = 0; i < resultChats.Count(); i++)
+            {
+                resultChats[i].UnreadMessages = await _messageRepository.CountUnreadMessages(new Guid(userId), new Guid(resultChats[i].Id));
+            }
+            return resultChats;
         }
 
         public async Task<ChatDetailsDto>GetByIdAsync(string userId, string chatId)
@@ -82,7 +87,9 @@ namespace Whisper.Application.Services
             createdChat.Members.Add(new ChatMember() { UserId = Guid.Parse(receiverId), IsAdmin = false });
             var chatResult = await _chatRepository.AddAsync(createdChat);
             await _chatRepository.SaveAsync();
-            return _mapper.Map<ChatDto>(chatResult);
+            var resultChat = _mapper.Map<ChatDto>(chatResult);
+            resultChat.UnreadMessages = 0;
+            return resultChat;
         }
     }
 }

@@ -1,26 +1,21 @@
 import path from "path"
 import { defineConfig, loadEnv } from 'vite' 
-import fs from "fs"
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import tailwindcss from "@tailwindcss/vite"
-import basicSsl from '@vitejs/plugin-basic-ssl';
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
 
-  
-  const certPath = '/home/chicago/fedora.tailfdec14.ts.net.crt';
-  const keyPath = '/home/chicago/fedora.tailfdec14.ts.net.key';
-
-  const hasCerts = fs.existsSync(certPath) && fs.existsSync(keyPath);
+  const backendTarget = env.VITE_API_URL || 'https://localhost:7055';
 
   return {
     plugins: [
       react(),
       babel({ presets: [reactCompilerPreset()] }),
       tailwindcss(),
-      (!hasCerts && mode === 'development') ? basicSsl() : []
+      mode === 'development' ? basicSsl() : []
     ],
     resolve: {
       alias: {
@@ -28,20 +23,18 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      host: 'fedora.tailfdec14.ts.net',
+      host: '127.0.0.1', 
       port: 5173,
-      https: hasCerts ? {
-        key: fs.readFileSync(keyPath),
-        cert: fs.readFileSync(certPath),
-      } : (mode === 'development'),
+      allowedHosts: ['.whisper-secure.space', 'whisper-secure.space'],
+      
       proxy: {
         '/api': {
-          target: env.VITE_API_URL || 'https://fedora.tailfdec14.ts.net:7055',
+          target: backendTarget,
           changeOrigin: true,
-          secure: false,
+          secure: false, 
         },
         '/ws': {
-          target: env.VITE_API_URL || 'https://fedora.tailfdec14.ts.net:7055',
+          target: backendTarget,
           ws: true,
           secure: false,
         },

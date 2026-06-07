@@ -6,6 +6,7 @@ using Microsoft.OpenApi;
 using MongoDB.Driver;
 using Scalar.AspNetCore;
 using System.Text;
+using Minio;
 using Whisper.API.Controllers;
 using Whisper.Application.Interfaces.Repositories;
 using Whisper.Application.Interfaces.Services;
@@ -41,6 +42,12 @@ builder.Services.AddScoped(sp =>
     return client.GetDatabase("whisper_messages_db");
 });
 
+
+builder.Services.AddMinio(configureSource => configureSource
+    .WithEndpoint(builder.Configuration["MinioSettings:Endpoint"])
+    .WithCredentials(builder.Configuration["MinioSettings:AccessKey"], builder.Configuration["MinioSettings:SecretKey"])
+    .WithSSL(bool.Parse(builder.Configuration["MinioSettings:WithSSL"] ?? "false")));
+
 // Add repositories
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -67,7 +74,10 @@ builder.Services.AddScoped<IReactionService, ReactionService>();
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
 builder.Services.AddSingleton<IOnlineTracker, OnlineTracker>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IMediaService, MinioMediaService>();
 builder.Services.AddMemoryCache();
+
+
 
 
 builder.Services.AddHttpClient<IBinlistService, BinlistService>(client =>
@@ -132,6 +142,16 @@ builder.Services.AddHttpClient<IEmojiService, EmojiService>((serviceProvider, cl
     client.BaseAddress = new Uri(options.BaseLink);
 }).AddStandardResilienceHandler();
 
+// Klipy Api Service
+builder.Services.Configure<KlipyApiSettings>(builder.Configuration.GetSection("KlipyApi"));
+builder.Services.AddHttpClient<IGifsService, KlipyService>((serviceProvider, client) =>
+{
+    var options = serviceProvider
+        .GetRequiredService<IOptions<KlipyApiSettings>>()
+        .Value;
+    client.BaseAddress = new Uri(options.BaseLink);
+}).AddStandardResilienceHandler();
+
 
 builder.Services.AddCors(options =>
 {
@@ -149,7 +169,12 @@ builder.Services.AddCors(options =>
                 "https://25.41.224.185:5173",
                 "https://100.101.70.10:5173",
                 "https://fedora.tailfdec14.ts.net:5173",
-                "https://localhost:5173"
+                "https://localhost:5173",
+                "https://whisper-secure.space:5173",
+                "https://whisper-secure.space",
+                "http://localhost:5173",
+                "https://localhost:5173",
+                "http://localhost"
                 )
                 .AllowAnyHeader()
                 .AllowAnyMethod()

@@ -1,5 +1,5 @@
 import * as signalR from "@microsoft/signalr";
-import type { MessageCreateDto, ReactionCreateDto } from "../types/chat";
+import type { MessageCreateDto, MessageDto, MessageUpdateDto, ReactionCreateDto } from "../types/chat";
 import { EncryptionService } from "./encryptionService";
 
 class ChatSocketService {
@@ -47,6 +47,22 @@ class ChatSocketService {
         }
     }
 
+    public async editMessage(message: MessageUpdateDto) {
+        if (this.isConnected()) {
+            await this.connection?.invoke("MessageEdit", message);
+        } else {
+            console.error("Cannot send message: WebSocket is not connected");
+        }
+    }
+
+    public async removeMessage(messageId: string) {
+        if (this.isConnected()) {
+            await this.connection?.invoke("MessageRemove", messageId);
+        } else {
+            console.error("Cannot send message: WebSocket is not connected");
+        }
+    }
+
     public async addReaction(reaction: ReactionCreateDto) {
         if (this.isConnected()) {
             await this.connection?.invoke("ReactionAdd", reaction);
@@ -75,23 +91,31 @@ class ChatSocketService {
         }
     }
 
-public onMessageNew(callback: (message: any) => void) {
-  this.connection?.on("message-new", async (message: any) => {
-    if (message.ciphertext && message.ciphertext.startsWith("#InitCode")) {
-      console.log("🔑 [Socket] Handshake received for chat:", message.chatId);
-      await EncryptionService.initializeReceiverSide(message.chatId, message.ciphertext);
-      return; 
+    public onMessageNew(callback: (message: any) => void) {
+        this.connection?.on("message-new", async (message: any) => {
+            if (message.ciphertext && message.ciphertext.startsWith("#InitCode")) {
+                console.log("🔑 [Socket] Handshake received for chat:", message.chatId);
+                await EncryptionService.initializeReceiverSide(message.chatId, message.ciphertext);
+                return; 
+            }
+
+            callback(message);
+        });
     }
 
-    callback(message);
-  });
-}
+    public onMessageEdited(callback: (message: MessageDto) => void) {
+        this.connection?.on("message-edited", async (message: MessageDto) => callback(message));
+    }
 
-    public onMessageRead(callback: (updatedMessage: any) => void) {
+    public onMessageRemoved(callback: (message: MessageDto) => void) {
+        this.connection?.on("message-removed", async (message: MessageDto) => callback(message));
+    }
+
+    public onMessageRead(callback: (messageId: string) => void) {
         this.connection?.on("message-read", callback);
     }
 
-    public onMessageDelivered(callback: (updatedMessage: any) => void) {
+    public onMessageDelivered(callback: (messageId: string) => void) {
         this.connection?.on("message-delivered", callback);
     }
 
