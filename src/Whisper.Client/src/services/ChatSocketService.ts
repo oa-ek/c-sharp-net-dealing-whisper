@@ -103,19 +103,19 @@ class ChatSocketService {
         });
     }
 
-    public onMessageEdited(callback: (message: any) => void) {
+    public onMessageEdited(callback: (message: MessageDto) => void) {
         this.connection?.on("message-edited", async (message: MessageDto) => callback(message));
     }
 
-    public onMessageRemoved(callback: (message: any) => void) {
+    public onMessageRemoved(callback: (message: MessageDto) => void) {
         this.connection?.on("message-removed", async (message: MessageDto) => callback(message));
     }
 
-    public onMessageRead(callback: (updatedMessage: any) => void) {
+    public onMessageRead(callback: (messageId: string) => void) {
         this.connection?.on("message-read", callback);
     }
 
-    public onMessageDelivered(callback: (updatedMessage: any) => void) {
+    public onMessageDelivered(callback: (messageId: string) => void) {
         this.connection?.on("message-delivered", callback);
     }
 

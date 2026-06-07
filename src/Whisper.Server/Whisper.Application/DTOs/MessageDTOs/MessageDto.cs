@@ -1,5 +1,6 @@
 ﻿using Whisper.Application.DTOs.ReactionDTOs;
 using Whisper.Domain.Entities;
+using Whisper.Domain.Enums;
 
 namespace Whisper.Application.DTOs.MessageDTOs
 {
@@ -11,6 +12,7 @@ namespace Whisper.Application.DTOs.MessageDTOs
         public string Ciphertext { get; set; }
         public string WrappedKey { get; set; }
         public string? ParentMessageId { get; set; }
+        public string DeliveryStatus { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public List<Attachment> Attachments { get; set; }

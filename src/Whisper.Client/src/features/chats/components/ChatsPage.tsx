@@ -6,7 +6,7 @@ import { EncryptionService } from "../../../services/encryptionService";
 import { ChatSidebar } from "./ChatSidebar";
 import { ChatWindow } from "./ChatWindow";
 import { UserInfoSidebar } from "./UserInfoSidebar";
-import type { ChatDto, MessageDto } from "../../../types/chat";
+import { DeliveryStatus, type ChatDto, type MessageDto } from "../../../types/chat";
 import type { UserDto } from "../../../types/user";
 
 export const ChatsPageFeature = () => {
@@ -169,6 +169,14 @@ export const ChatsPageFeature = () => {
           });
         });
 
+        chatSocketService.onMessageDelivered((messageId: string) => {
+          setMessages(prev => prev.map(m => m.id === messageId ? {...m, deliveryStatus: DeliveryStatus.Delivered} : m));
+        });
+
+        chatSocketService.onMessageRead((messageId: string) => {
+          setMessages(prev => prev.map(m => m.id === messageId ? {...m, deliveryStatus: DeliveryStatus.Read} : m));
+        });
+
       } catch (err) { console.error("SignalR Error:", err); }
     };
 
@@ -262,7 +270,17 @@ export const ChatsPageFeature = () => {
     } catch (err) {
       console.error("Couldn't remove message. Why? \n" + err);
     }
-  }
+  };
+
+  // handle setting message delivery status to read
+  const handleMessageRead = async (messageId: string) => {
+    if (!selectedChatId) return;
+    try {
+      await chatSocketService.markAsRead(messageId);
+    } catch (err) {
+      console.error("Couldn't mark message read. Why? \n" + err);
+    }
+  };
 
   // handles opening of profile info and sets the user for it
   const handleOpenProfile = async () => {
@@ -326,6 +344,7 @@ export const ChatsPageFeature = () => {
         onSendMessage={handleSendMessage}
         onMessageEdit={handleMessageEdit}
         onMessageRemove={handleMessageRemove}
+        onMessageRead={handleMessageRead}
         onChatRemoval={handleChatRemoval}
         activeChatMembers={chatMembers ? chatMembers[selectedChat.id] : undefined}
       /> 

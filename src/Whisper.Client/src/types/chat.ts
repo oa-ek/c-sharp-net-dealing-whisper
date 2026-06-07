@@ -1,3 +1,9 @@
+export const DeliveryStatus = {
+    Sent: "Sent",
+    Delivered: "Delivered",
+    Read: "Read"
+} as const;
+
 export interface ChatDto {
     id: string;
     name: string;
@@ -27,6 +33,7 @@ export interface MessageDto {
     ciphertext: string;
     wrappedKey: string;
     parentMessageId?: string;
+    deliveryStatus: string;
     createdAt: string;
     updatedAt: string;
     attachments: any[];
