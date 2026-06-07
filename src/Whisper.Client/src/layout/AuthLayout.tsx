@@ -18,12 +18,6 @@ const AuthLayout = () => {
       <div className="relative">
           <Outlet />
         </div>
-
-        <div className="mt-12 flex justify-center items-center gap-3 opacity-20">
-            <div className="h-[1px] w-8 bg-gray-300" />
-            <div className="w-1 h-1 rounded-full bg-gray-400" />
-            <div className="h-[1px] w-8 bg-gray-300" />
-        </div>
     </div>
   );
 };

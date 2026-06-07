@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { SendHorizonal, Info, Paperclip, Smile, SquarePlay, Trash, FileText, Loader2, X, Edit, Reply, Check, CheckCheck, Send} from "lucide-react";
 import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 import chatSocketService from "../../../services/ChatSocketService";
 import { EmojiModal } from "./EmojiModal";
@@ -11,7 +10,6 @@ import { DeliveryStatus, type ChatDto, type MessageDto } from "../../../types/ch
 import type { UserDto } from "../../../types/user";
 import { ConfirmModal } from "../../../components/ui/ConfirmModal";
 import agent from "../../../api/agent";
-import { db } from "../../../api/db";
 import { SecureAttachment } from "../components/SecureAttachments";
 import { RemoteAvatar } from "./RemoteAvatar";
 

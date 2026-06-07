@@ -9,6 +9,7 @@ export interface ChatDto {
     name: string;
     isGroup: boolean;
     createdBy: Date;
+    unreadMessages?: number
 }
 
 export interface MessageCreateDto {
