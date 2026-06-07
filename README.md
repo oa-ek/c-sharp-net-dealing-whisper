@@ -10,8 +10,7 @@
 
 **Виконавці:**
 * **Illia Davydiuk**
-* **Bohdan Lutsiuk**
-**Рік:** 2026
+* **Bohdan Lutsiuk**  
 
 ---
 
