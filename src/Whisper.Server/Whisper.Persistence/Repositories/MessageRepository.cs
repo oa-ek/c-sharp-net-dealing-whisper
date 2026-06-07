@@ -45,7 +45,7 @@ namespace Whisper.Persistence.Repositories
 
         public async Task<int> CountUnreadMessages(Guid userId, Guid chatId)
         {
-            return (int)await _collection.CountDocumentsAsync(m => m.ChatId == chatId && m.SenderId != userId && m.DeliveryStatus != DeliveryStatus.Read);
+            return (int)await _collection.CountDocumentsAsync(m => m.ChatId == chatId && m.SenderId != userId && m.DeliveryStatus != DeliveryStatus.Read && m.WrappedKey != "handshake_v1");
         }
 
         public async Task<IEnumerable<Message>> GetLimitedAsync(string chatId, int limit, int offset)

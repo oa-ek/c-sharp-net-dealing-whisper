@@ -87,7 +87,7 @@ export const UserInfoSidebar = ({ user, onClose }: UserInfoProps) => {
                 <span className="text-[10px] font-black uppercase tracking-widest">Активність</span>
             </div>
             <p className="text-sm text-gray-600 font-medium pl-6">
-               Був у мережі: <span className="text-[#3E93E6] font-bold">{formatLastSeen(user.lastSeen)}</span>
+                Шепоче з <span className="text-[#3E93E6] font-bold">{formatLastSeen(user.lastSeen)}</span>
             </p>
           </div>
 
@@ -109,9 +109,9 @@ export const UserInfoSidebar = ({ user, onClose }: UserInfoProps) => {
 
       {/* Footer із затіненням */}
       <div className="p-6 text-center border-t border-gray-100 bg-gray-50/30">
-         <p className="text-[9px] text-gray-300 font-black uppercase tracking-[0.3em]">
-           Whisper Protocol v2
-         </p>
+        <p className="text-[9px] text-gray-300 font-black uppercase tracking-[0.3em]">
+          Whisper Protocol v2.0.0
+        </p>
       </div>
     </div>
   );
