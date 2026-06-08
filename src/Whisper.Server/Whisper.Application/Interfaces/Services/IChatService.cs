@@ -13,5 +13,6 @@ namespace Whisper.Application.Interfaces.Services
         public Task<IEnumerable<UserDto>> GetParticipantsAsync(string userId, string chatId);
         public Task<IEnumerable<MessageDto>> GetMessagesAsync(string userId, string chatId, int limit, int offset);
         public Task<ChatDto> CreateChatAsync(string userId, string receiverId, ChatCreateDto chat);
+        public Task<int> GetCountAsync(string userId);
     }
 }
