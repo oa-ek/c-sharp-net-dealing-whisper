@@ -33,5 +33,13 @@ namespace Whisper.Persistence.Repositories
                 .Select(m => m.User)
                 .ToList() ?? null;
         }
+
+        public async Task<int> GetCount(Guid userId)
+        {
+            return _dbSet
+                .Include(c => c.Members)
+                .Where(c => c.Members.Any(m => m.UserId == userId))
+                .Count();
+        }
     }
 }

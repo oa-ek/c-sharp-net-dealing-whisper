@@ -24,6 +24,16 @@ namespace Whisper.API.Controllers
             return Ok(await _chatService.GetAllAsync(userId));
         }
 
+        [HttpGet("list/{chatCount}")]
+        public async Task<IActionResult> GetListWithCount(int chatCount)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (await _chatService.GetCountAsync(userId) != chatCount)
+                return Ok(await _chatService.GetAllAsync(userId));
+            else
+                return Ok();
+        }
+
         [HttpGet("{chatId}")]
         public async Task<IActionResult> GetChat(string chatId)
         {

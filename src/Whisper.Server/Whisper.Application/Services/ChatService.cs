@@ -91,5 +91,10 @@ namespace Whisper.Application.Services
             resultChat.UnreadMessages = 0;
             return resultChat;
         }
+
+        public async Task<int> GetCountAsync(string userId)
+        {
+            return await _chatRepository.GetCount(new Guid(userId));
+        }
     }
 }

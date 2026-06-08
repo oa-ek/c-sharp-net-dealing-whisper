@@ -7,5 +7,6 @@ namespace Whisper.Application.Interfaces.Repositories
         public Task<Chat> UpdateAsync(Chat chat);
         public Task<IEnumerable<Chat>> GetListAsync(Guid userId);
         public Task<IEnumerable<User>> GetParticipants(Guid chatId);
+        public Task<int> GetCount(Guid userId);
     }
 }

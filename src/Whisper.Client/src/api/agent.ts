@@ -62,6 +62,7 @@ const Auth = {
 
 const Chats = {
     list: () => requests.get<ChatDto[]>("/api/v1/Chats/list"), 
+    listCount: (count: number) => requests.get<ChatDto[] | null>(`/api/v1/Chats/list/${count}`),
     messages: (chatId: string) => 
         requests.get<any[]>(`/api/v1/Chats/${chatId}/messages?limit=50&offset=0`),
     create: (receiverId: string, name: string) => 

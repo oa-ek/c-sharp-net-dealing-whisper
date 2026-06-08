@@ -11,6 +11,7 @@ import type { UserDto } from "../../../types/user";
 
 export const ChatsPageFeature = () => {
   const [chats, setChats] = useState<ChatDto[]>([]);
+  const [chatUpdate, setChatUpdate] = useState<number>(0)
   const [messages, setMessages] = useState<MessageDto[]>([]);
   const [decryptedMessages, setDecryptedMessages] = useState<Record<string, string>>({});
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
@@ -321,6 +322,25 @@ export const ChatsPageFeature = () => {
       }
     }
   }, [selectedChat])
+
+  // running every 8 seconds triggering chat update function
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setChatUpdate(prev => prev + 1);
+    }, 8000)
+    return () => clearInterval(intervalId); 
+  }, [])
+
+  // updating chat list if new chat appeared on trigger
+  useEffect(() => {
+    if (chatUpdate < 1) return;
+    const updateChats = async() => {
+      const updatedChats = await agent.Chats.listCount(chats.length);
+      if (updatedChats)
+        setChats(updatedChats);
+    }
+    updateChats();
+  }, [chatUpdate])
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#f9fafb]">
